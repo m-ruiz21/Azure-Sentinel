@@ -1,0 +1,100 @@
+{
+  "name": "QualysKBDCR",
+  "apiVersion": "2023-03-11",
+  "type": "Microsoft.Insights/dataCollectionRules",
+  "location": "{{location}}",
+  "properties": {
+    "description": "Data Collection Rule for Qualys KB vulnerability data ingestion",
+    "dataCollectionEndpointId": "{{dataCollectionEndpointId}}",
+    "streamDeclarations": {
+      "Custom-QualysKB": {
+        "columns": [
+          {
+            "name": "QID",
+            "type": "string"
+          },
+          {
+            "name": "TITLE",
+            "type": "dynamic"
+          },
+          {
+            "name": "CATEGORY",
+            "type": "string"
+          },
+          {
+            "name": "CONSEQUENCE",
+            "type": "dynamic"
+          },
+          {
+            "name": "DIAGNOSIS",
+            "type": "dynamic"
+          },
+          {
+            "name": "SOLUTION",
+            "type": "dynamic"
+          },
+          {
+            "name": "LAST_SERVICE_MODIFICATION_DATETIME",
+            "type": "string"
+          },
+          {
+            "name": "PATCHABLE",
+            "type": "string"
+          },
+          {
+            "name": "CVE_LIST",
+            "type": "dynamic"
+          },
+          {
+            "name": "VENDOR_REFERENCE_LIST",
+            "type": "dynamic"
+          },
+          {
+            "name": "PCI_FLAG",
+            "type": "string"
+          },
+          {
+            "name": "PUBLISHED_DATETIME",
+            "type": "string"
+          },
+          {
+            "name": "SEVERITY_LEVEL",
+            "type": "string"
+          },
+          {
+            "name": "SOFTWARE_LIST",
+            "type": "dynamic"
+          },
+          {
+            "name": "VULN_TYPE",
+            "type": "string"
+          },
+          {
+            "name": "DISCOVERY",
+            "type": "dynamic"
+          },
+          {
+            "name": "THREAT_INTELLIGENCE",
+            "type": "dynamic"
+          }
+        ]
+      }
+    },
+    "destinations": {
+      "logAnalytics": [
+        {
+          "workspaceResourceId": "{{workspaceResourceId}}",
+          "name": "clv2ws1"
+        }
+      ]
+    },
+    "dataFlows": [
+      {
+        "streams": ["Custom-QualysKB"],
+        "destinations": ["clv2ws1"],
+        "transformKql": "source\n| extend\n    // Basic field mappings with proper type conversion\n    QID = tostring(QID),\n    Title = tostring(TITLE['#cdata-section']),\n    Category = tostring(CATEGORY),\n    \n    // HTML cleaning for text fields - replicating PowerShell Html-ToText function\n    // Step 1: Remove line breaks and replace with spaces\n    ConsequenceRaw = replace_string(tostring(CONSEQUENCE['#cdata-section']), '\\r', ' '),\n    ConsequenceStep1 = replace_string(ConsequenceRaw, '\\n', ' '),\n    ConsequenceStep2 = replace_string(ConsequenceStep1, '\\t', ' '),\n    \n    // Step 2: Remove invisible content tags\n    ConsequenceStep3 = replace_regex(ConsequenceStep2, '<head[^>]*?>.*?</head>', ''),\n    ConsequenceStep4 = replace_regex(ConsequenceStep3, '<style[^>]*?>.*?</style>', ''),\n    ConsequenceStep5 = replace_regex(ConsequenceStep4, '<script[^>]*?>.*?</script>', ''),\n    ConsequenceStep6 = replace_regex(ConsequenceStep5, '<object[^>]*?>.*?</object>', ''),\n    \n    // Step 3: Condense extra whitespace\n    ConsequenceStep7 = replace_regex(ConsequenceStep6, '( )+', ' '),\n    \n    // Step 4: Add line breaks for block elements\n    ConsequenceStep8 = replace_regex(ConsequenceStep7, '</?div[^>]*?>', '\\n'),\n    ConsequenceStep9 = replace_regex(ConsequenceStep8, '</?p[^>]*?>', '\\n'),\n    ConsequenceStep10 = replace_regex(ConsequenceStep9, '<br[^>]*?/?>', '\\n'),\n    \n    // Step 5: Strip remaining HTML tags\n    ConsequenceStep11 = replace_regex(ConsequenceStep10, '<[^>]*?>', ''),\n    \n    // Step 6: Replace common HTML entities\n    ConsequenceStep12 = replace_string(ConsequenceStep11, '&amp;bull;', ' * '),\n    ConsequenceStep13 = replace_string(ConsequenceStep12, '&amp;lsaquo;', '<'),\n    ConsequenceStep14 = replace_string(ConsequenceStep13, '&amp;rsaquo;', '>'),\n    ConsequenceStep15 = replace_string(ConsequenceStep14, '&amp;rsquo;', '\\''),\n    ConsequenceStep16 = replace_string(ConsequenceStep15, '&amp;lsquo;', '\\''),\n    ConsequenceStep17 = replace_string(ConsequenceStep16, '&amp;quot;', '\"'),\n    ConsequenceStep18 = replace_string(ConsequenceStep17, '&amp;ldquo;', '\"'),\n    ConsequenceStep19 = replace_string(ConsequenceStep18, '&amp;rdquo;', '\"'),\n    ConsequenceStep20 = replace_string(ConsequenceStep19, '&amp;trade;', '(tm)'),\n    ConsequenceStep21 = replace_string(ConsequenceStep20, '&amp;frasl;', '/'),\n    ConsequenceStep22 = replace_string(ConsequenceStep21, '&amp;#34;', '\"'),\n    ConsequenceStep23 = replace_string(ConsequenceStep22, '&amp;#034;', '\"'),\n    ConsequenceStep24 = replace_string(ConsequenceStep23, '&amp;#x22;', '\"'),\n    ConsequenceStep25 = replace_string(ConsequenceStep24, '&amp;lt;', '<'),\n    ConsequenceStep26 = replace_string(ConsequenceStep25, '&amp;#60;', '<'),\n    ConsequenceStep27 = replace_string(ConsequenceStep26, '&amp;#060;', '<'),\n    ConsequenceStep28 = replace_string(ConsequenceStep27, '&amp;#x3c;', '<'),\n    ConsequenceStep29 = replace_string(ConsequenceStep28, '&amp;gt;', '>'),\n    ConsequenceStep30 = replace_string(ConsequenceStep29, '&amp;#62;', '>'),\n    ConsequenceStep31 = replace_string(ConsequenceStep30, '&amp;#062;', '>'),\n    ConsequenceStep32 = replace_string(ConsequenceStep31, '&amp;#x3e;', '>'),\n    ConsequenceStep33 = replace_string(ConsequenceStep32, '&amp;copy;', '(c)'),\n    ConsequenceStep34 = replace_string(ConsequenceStep33, '&amp;#169;', '(c)'),\n    ConsequenceStep35 = replace_string(ConsequenceStep34, '&amp;reg;', '(r)'),\n    ConsequenceStep36 = replace_string(ConsequenceStep35, '&amp;#174;', '(r)'),\n    ConsequenceStep37 = replace_string(ConsequenceStep36, '&amp;nbsp;', ' '),\n    ConsequenceStep38 = replace_string(ConsequenceStep37, '&amp;amp;', '&'),\n    ConsequenceStep39 = replace_string(ConsequenceStep38, '&amp;#38;', '&'),\n    ConsequenceStep40 = replace_string(ConsequenceStep39, '&amp;#038;', '&'),\n    Consequence = replace_string(ConsequenceStep40, '&amp;#x26;', '&'),\n    \n    // Apply same HTML cleaning logic to Diagnosis field\n    DiagnosisRaw = replace_string(tostring(DIAGNOSIS['#cdata-section']), '\\r', ' '),\n    DiagnosisClean1 = replace_string(DiagnosisRaw, '\\n', ' '),\n    DiagnosisClean2 = replace_string(DiagnosisClean1, '\\t', ' '),\n    DiagnosisClean3 = replace_regex(DiagnosisClean2, '<head[^>]*?>.*?</head>', ''),\n    DiagnosisClean4 = replace_regex(DiagnosisClean3, '<style[^>]*?>.*?</style>', ''),\n    DiagnosisClean5 = replace_regex(DiagnosisClean4, '<script[^>]*?>.*?</script>', ''),\n    DiagnosisClean6 = replace_regex(DiagnosisClean5, '<object[^>]*?>.*?</object>', ''),\n    DiagnosisClean7 = replace_regex(DiagnosisClean6, '( )+', ' '),\n    DiagnosisClean8 = replace_regex(DiagnosisClean7, '</?div[^>]*?>', '\\n'),\n    DiagnosisClean9 = replace_regex(DiagnosisClean8, '</?p[^>]*?>', '\\n'),\n    DiagnosisClean10 = replace_regex(DiagnosisClean9, '<br[^>]*?/?>', '\\n'),\n    DiagnosisClean11 = replace_regex(DiagnosisClean10, '<[^>]*?>', ''),\n    DiagnosisClean12 = replace_string(DiagnosisClean11, '&amp;nbsp;', ' '),\n    DiagnosisClean13 = replace_string(DiagnosisClean12, '&amp;lt;', '<'),\n    DiagnosisClean14 = replace_string(DiagnosisClean13, '&amp;gt;', '>'),\n    DiagnosisClean15 = replace_string(DiagnosisClean14, '&amp;quot;', '\"'),\n    DiagnosisClean16 = replace_string(DiagnosisClean15, '&amp;amp;', '&'),\n    Diagnosis = DiagnosisClean16,\n    \n    // Apply same HTML cleaning logic to Solution field  \n    SolutionRaw = replace_string(tostring(SOLUTION['#cdata-section']), '\\r', ' '),\n    SolutionClean1 = replace_string(SolutionRaw, '\\n', ' '),\n    SolutionClean2 = replace_string(SolutionClean1, '\\t', ' '),\n    SolutionClean3 = replace_regex(SolutionClean2, '<head[^>]*?>.*?</head>', ''),\n    SolutionClean4 = replace_regex(SolutionClean3, '<style[^>]*?>.*?</style>', ''),\n    SolutionClean5 = replace_regex(SolutionClean4, '<script[^>]*?>.*?</script>', ''),\n    SolutionClean6 = replace_regex(SolutionClean5, '<object[^>]*?>.*?</object>', ''),\n    SolutionClean7 = replace_regex(SolutionClean6, '( )+', ' '),\n    SolutionClean8 = replace_regex(SolutionClean7, '</?div[^>]*?>', '\\n'),\n    SolutionClean9 = replace_regex(SolutionClean8, '</?p[^>]*?>', '\\n'),\n    SolutionClean10 = replace_regex(SolutionClean9, '<br[^>]*?/?>', '\\n'),\n    SolutionClean11 = replace_regex(SolutionClean10, '<[^>]*?>', ''),\n    SolutionClean12 = replace_string(SolutionClean11, '&amp;nbsp;', ' '),\n    SolutionClean13 = replace_string(SolutionClean12, '&amp;lt;', '<'),\n    SolutionClean14 = replace_string(SolutionClean13, '&amp;gt;', '>'),\n    SolutionClean15 = replace_string(SolutionClean14, '&amp;quot;', '\"'),\n    SolutionClean16 = replace_string(SolutionClean15, '&amp;amp;', '&'),\n    Solution = SolutionClean16,\n    \n    // Date/time field conversions\n    Last_Service_Modification_DateTime = todatetime(LAST_SERVICE_MODIFICATION_DATETIME),\n    Published_DateTime = todatetime(PUBLISHED_DATETIME),\n    \n    // CVE extraction from nested structure\n    CVE_ID = tostring(CVE_LIST.CVE.ID['#cdata-section']),\n    CVE_URL = tostring(CVE_LIST.CVE.URL['#cdata-section']),\n    \n    // Vendor reference extraction\n    Vendor_Reference_ID = tostring(VENDOR_REFERENCE_LIST.VENDOR_REFERENCE.ID['#cdata-section']),\n    Vendor_Reference_URL = tostring(VENDOR_REFERENCE_LIST.VENDOR_REFERENCE.URL['#cdata-section']),\n    \n    // Software information extraction\n    Software_Product = tostring(SOFTWARE_LIST.SOFTWARE.PRODUCT['#cdata-section']),\n    Software_Vendor = tostring(SOFTWARE_LIST.SOFTWARE.VENDOR['#cdata-section']),\n    \n    // Other simple field mappings\n    Patchable = tostring(PATCHABLE),\n    PCI_Flag = tostring(PCI_FLAG),\n    Severity_Level = tostring(SEVERITY_LEVEL),\n    Vuln_Type = tostring(VULN_TYPE),\n    \n    // Discovery field extractions\n    Discovery_Additional_Info = tostring(DISCOVERY.ADDITIONAL_INFO),\n    Discovery_Auth_Type = tostring(DISCOVERY.AUTH_TYPE_LIST.AUTH_TYPE),\n    Discovery_Remote = tostring(DISCOVERY.REMOTE),\n    \n    // Threat Intelligence - serialize to JSON string to match original format\n    THREAT_INTELLIGENCE = tostring(todynamic(tostring(THREAT_INTELLIGENCE.THREAT_INTEL))),\n    \n    // System field\n    TimeGenerated = now()\n    \n| project \n    QID, \n    Title, \n    Category, \n    Consequence, \n    Diagnosis, \n    Solution,\n    Last_Service_Modification_DateTime, \n    Patchable, \n    CVE_ID, \n    CVE_URL,\n    Vendor_Reference_ID, \n    Vendor_Reference_URL, \n    PCI_Flag, \n    Published_DateTime,\n    Severity_Level, \n    Software_Product, \n    Software_Vendor, \n    Vuln_Type,\n    Discovery_Additional_Info, \n    Discovery_Auth_Type, \n    Discovery_Remote,\n    THREAT_INTELLIGENCE, \n    TimeGenerated",
+        "outputStream": "Custom-QualysKB_CL"
+      }
+    ]
+  }
+}

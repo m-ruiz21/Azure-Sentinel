@@ -1,0 +1,54 @@
+{
+  "type": "Microsoft.SecurityInsights/dataConnectors",
+  "apiVersion": "2025-03-01",
+  "name": "QualysKBLogsCCP",
+  "kind": "RestApiPoller",
+  "properties": {
+    "connectorDefinitionName": "QualysKBLogsCCPDefinition",
+    "dataType": "QualysKB_CL",
+    "dcrConfig": {
+      "streamName": "Custom-QualysKB",
+      "dataCollectionEndpoint": "{{dataCollectionEndpoint}}",
+      "dataCollectionRuleImmutableId": "{{dataCollectionRuleImmutableId}}"
+    },
+    "auth": {
+      "type": "Basic",
+      "userName": "[[parameters('username')]]",
+      "password": "[[parameters('password')]]"
+    },
+    "request": {
+      "apiEndpoint": "{{apiServerUrl}}/fo/knowledge_base/vuln/",
+      "httpMethod": "GET",
+      "queryWindowInMin": 10,
+      "queryTimeFormat": "yyyy-MM-ddTHH:mm:ssZ",
+      "retryCount": 3,
+      "timeoutInSeconds": 60,
+      "headers": {
+        "X-Requested-With": "XMLHttpRequest",
+        "User-Agent": "Microsoft-Sentinel-QualysKB-Connector"
+      },
+      "queryParameters": {
+        "action": "list",
+        "published_after": "{_QueryWindowStartTime}",
+        "details": "All",
+        "show_disabled_flag": "0",
+        "show_qid_change_log": "0"
+      },
+      "rateLimitQps": 1,
+      "queryParametersTemplate": "{{filterParameters}}"
+    },
+    "response": {
+      "eventsJsonPaths": [
+        "$.KNOWLEDGE_BASE_VULN_LIST_OUTPUT.RESPONSE.VULN_LIST.VULN"
+      ],
+      "format": "xml",
+      "successStatusCodes": [
+        200
+      ]
+    },
+    "paging": {
+      "pagingType": "LinkHeader",
+      "linkHeaderTokenJsonPath": "$.KNOWLEDGE_BASE_VULN_LIST_OUTPUT.RESPONSE.WARNING.URL['#cdata-section']"
+    }
+  }
+}

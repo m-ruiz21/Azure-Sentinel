@@ -1,0 +1,104 @@
+{
+  "name": "QualysKB_CL",
+  "apiVersion": "2025-02-01",
+  "type": "Microsoft.OperationalInsights/workspaces/tables",
+  "properties": {
+    "schema": {
+      "name": "QualysKB_CL",
+      "columns": [
+        {
+          "name": "TimeGenerated",
+          "type": "datetime"
+        },
+        {
+          "name": "QID",
+          "type": "string"
+        },
+        {
+          "name": "Title",
+          "type": "string"
+        },
+        {
+          "name": "Category",
+          "type": "string"
+        },
+        {
+          "name": "Consequence",
+          "type": "string"
+        },
+        {
+          "name": "Diagnosis",
+          "type": "string"
+        },
+        {
+          "name": "Last_Service_Modification_DateTime",
+          "type": "datetime"
+        },
+        {
+          "name": "Patchable",
+          "type": "string"
+        },
+        {
+          "name": "CVE_ID",
+          "type": "string"
+        },
+        {
+          "name": "CVE_URL",
+          "type": "string"
+        },
+        {
+          "name": "Vendor_Reference_ID",
+          "type": "string"
+        },
+        {
+          "name": "Vendor_Reference_URL",
+          "type": "string"
+        },
+        {
+          "name": "PCI_Flag",
+          "type": "string"
+        },
+        {
+          "name": "Published_DateTime",
+          "type": "datetime"
+        },
+        {
+          "name": "Severity_Level",
+          "type": "string"
+        },
+        {
+          "name": "Software_Product",
+          "type": "string"
+        },
+        {
+          "name": "Software_Vendor",
+          "type": "string"
+        },
+        {
+          "name": "Solution",
+          "type": "string"
+        },
+        {
+          "name": "Vuln_Type",
+          "type": "string"
+        },
+        {
+          "name": "Discovery_Additional_Info",
+          "type": "string"
+        },
+        {
+          "name": "Discovery_Auth_Type",
+          "type": "string"
+        },
+        {
+          "name": "Discovery_Remote",
+          "type": "string"
+        },
+        {
+          "name": "THREAT_INTELLIGENCE",
+          "type": "string"
+        }
+      ]
+    }
+  }
+}

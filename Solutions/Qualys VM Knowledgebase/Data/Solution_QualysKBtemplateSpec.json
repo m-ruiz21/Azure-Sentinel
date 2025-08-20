@@ -4,7 +4,8 @@
   "Logo": "<img src=\"https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/qualys_logo.svg\" width=\"75px\" height=\"75px\">",
   "Description": "The [Qualys Vulnerability Management](https://www.qualys.com/apps/vulnerability-management/) KB solution for Microsoft Sentinel enables you to ingest Qualys VM KB logs into Microsoft Sentinel.",
   "Data Connectors": [
-    "Data Connectors/QualysKB_API_FunctionApp.json"
+    "Data Connectors/QualysKB_API_FunctionApp.json",
+    "Data Connectors/QualysKBLogs_ccp/QualysKBLogs_connectorDefinition.json"
   ],
   "Parsers": [
     "Parsers/QualysKB.yaml"
@@ -13,6 +14,6 @@
   "BasePath": "C:\\GitHub\\Azure-Sentinel\\Solutions\\Qualys VM Knowledgebase",
   "Version": "3.0.1",
   "Metadata": "SolutionMetadata.json",
- "TemplateSpec": true,
+  "TemplateSpec": true,
   "Is1PConnector": false
 }

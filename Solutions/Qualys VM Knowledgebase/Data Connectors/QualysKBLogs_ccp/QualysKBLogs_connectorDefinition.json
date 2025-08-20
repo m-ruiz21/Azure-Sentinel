@@ -1,0 +1,171 @@
+{
+  "name": "QualysKBLogsCCPDefinition",
+  "apiVersion": "2025-03-01",
+  "type": "Microsoft.SecurityInsights/dataConnectorDefinitions",
+  "location": "{{location}}",
+  "kind": "Customizable",
+  "properties": {
+    "connectorUiConfig": {
+      "id": "QualysKBLogsCCP",
+      "title": "Qualys Vulnerability Management KnowledgeBase (KB)",
+      "publisher": "Qualys",
+      "descriptionMarkdown": "The Qualys Vulnerability Management (VM) KnowledgeBase (KB) data connector provides the capability to ingest Qualys KB vulnerability data into Microsoft Sentinel using the REST API. The connector provides visibility into vulnerability details, threat intelligence, and security recommendations from Qualys KnowledgeBase.",
+      "logo": "QualysLogo.svg",
+      "graphQueriesTableName": "QualysKB_CL",
+      "sampleQueries": [
+        {
+          "description": "All Qualys KB vulnerabilities",
+          "query": "QualysKB_CL\n | sort by TimeGenerated desc"
+        },
+        {
+          "description": "High severity vulnerabilities",
+          "query": "QualysKB_CL\n | where Severity_Level == '5'\n | sort by TimeGenerated desc"
+        },
+        {
+          "description": "Vulnerabilities with CVE references",
+          "query": "QualysKB_CL\n | where isnotempty(CVE_ID)\n | sort by TimeGenerated desc"
+        }
+      ],
+      "dataTypes": [
+        {
+          "name": "QualysKB_CL",
+          "lastDataReceivedQuery": "QualysKB_CL\n | summarize Time = max(TimeGenerated)\n | where isnotempty(Time)"
+        }
+      ],
+      "connectivityCriteria": [
+        {
+          "type": "hasDataConnectors"
+        }
+      ],
+      "availability": {
+        "isPreview": false,
+        "status": 1
+      },
+      "permissions": {
+        "resourceProvider": [
+          {
+            "provider": "Microsoft.OperationalInsights/workspaces",
+            "permissionsDisplayText": "Read and Write permissions are required.",
+            "providerDisplayName": "Workspace",
+            "scope": "Workspace",
+            "requiredPermissions": {
+              "read": true,
+              "write": true,
+              "delete": false
+            }
+          },
+          {
+            "provider": "Microsoft.OperationalInsights/workspaces/sharedKeys",
+            "permissionsDisplayText": "Read permissions are required to the shared keys of the workspace.",
+            "providerDisplayName": "Keys",
+            "scope": "Workspace",
+            "requiredPermissions": {
+              "read": true,
+              "write": false,
+              "delete": false
+            }
+          }
+        ],
+        "customs": [
+          {
+            "name": "Qualys VM API Credentials",
+            "description": "Qualys VM username and password with API access permissions are required. For more information, see the [Qualys API User Guide](https://www.qualys.com/docs/qualys-api-vmpc-user-guide.pdf)."
+          },
+          {
+            "name": "Qualys VM API Server URL",
+            "description": "The Qualys API server URL is required. The format should be https://qualysapi.{platform}.{domain}/api/2.0 where platform and domain correspond to your Qualys subscription."
+          }
+        ]
+      },
+      "instructionSteps": [
+        {
+          "title": "1. Obtain Qualys VM API credentials",
+          "description": "To connect to Qualys VM API, you need:\n- Qualys VM username with API access permissions\n- Qualys VM password\n- Qualys API server URL (e.g., https://qualysapi.qualys.com/api/2.0)\n\nFor more information, see the [Qualys API User Guide](https://www.qualys.com/docs/qualys-api-vmpc-user-guide.pdf).",
+          "instructions": [
+            {
+              "parameters": {
+                "title": "Qualys VM API Credentials",
+                "instructionSteps": [
+                  {
+                    "title": "API Server URL",
+                    "description": "Enter your Qualys API server URL. The format should be https://qualysapi.{platform}.{domain}/api/2.0",
+                    "instructions": [
+                      {
+                        "parameters": {
+                          "name": "apiServerUrl",
+                          "displayName": "API Server URL",
+                          "description": "The Qualys API server URL",
+                          "type": "text",
+                          "isOptional": false
+                        },
+                        "type": "BasicAuth"
+                      }
+                    ]
+                  },
+                  {
+                    "title": "Authentication",
+                    "description": "Provide your Qualys VM API credentials",
+                    "instructions": [
+                      {
+                        "parameters": {
+                          "name": "username",
+                          "displayName": "Username",
+                          "description": "The Qualys VM API username",
+                          "type": "text",
+                          "isOptional": false
+                        },
+                        "type": "BasicAuth"
+                      },
+                      {
+                        "parameters": {
+                          "name": "password",
+                          "displayName": "Password",
+                          "description": "The Qualys VM API password",
+                          "type": "password",
+                          "isOptional": false
+                        },
+                        "type": "BasicAuth"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "type": "BasicAuth"
+            }
+          ]
+        },
+        {
+          "title": "2. Configure the connector",
+          "description": "Click the **Connect** button below to enable the Qualys KB data connector. This will deploy the necessary Azure resources to start collecting vulnerability data from your Qualys KnowledgeBase.",
+          "instructions": [
+            {
+              "parameters": {
+                "connectorDefinitionName": "QualysKBLogsCCPDefinition",
+                "title": "Connect to Qualys KnowledgeBase",
+                "name": "QualysKBLogsCCP"
+              },
+              "type": "ConnectionToggleButton"
+            }
+          ]
+        }
+      ],
+      "metadata": {
+        "id": "12345678-1234-1234-1234-123456789012",
+        "version": "1.0.0",
+        "kind": "dataConnector",
+        "source": {
+          "kind": "solution",
+          "name": "QualysKB"
+        },
+        "author": {
+          "name": "Microsoft"
+        },
+        "support": {
+          "name": "Microsoft Corporation",
+          "link": "https://support.microsoft.com",
+          "tier": "Microsoft"
+        }
+      }
+    }
+  }
+}
