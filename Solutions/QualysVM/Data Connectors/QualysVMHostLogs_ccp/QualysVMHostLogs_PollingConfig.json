@@ -15,7 +15,7 @@
             "request": {
                 "apiEndpoint": "{{apiServerUrl}}/api/3.0/fo/asset/host/vm/detection/",
                 "httpMethod": "GET",
-                "QueryWindowInMin": 10,
+                "queryWindowInMin": 10,
                 "queryTimeFormat": "yyyy-MM-ddTHH:mm:ssZ",
                 "headers": {
                     "X-Requested-With": "XMLHttpRequest",

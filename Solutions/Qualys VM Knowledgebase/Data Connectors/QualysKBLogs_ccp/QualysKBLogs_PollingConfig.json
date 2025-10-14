@@ -11,10 +11,10 @@
       "dataCollectionEndpoint": "{{dataCollectionEndpoint}}",
       "dataCollectionRuleImmutableId": "{{dataCollectionRuleImmutableId}}"
     },
-    "auth": {
+    "auth":{
       "type": "Basic",
-      "userName": "[[parameters('username')]]",
-      "password": "[[parameters('password')]]"
+      "userName": "[[parameters('username')]",
+      "password": "[[parameters('password')]"
     },
     "request": {
       "apiEndpoint": "{{apiServerUrl}}/fo/knowledge_base/vuln/",
@@ -25,7 +25,7 @@
       "timeoutInSeconds": 60,
       "headers": {
         "X-Requested-With": "XMLHttpRequest",
-        "User-Agent": "Microsoft-Sentinel-QualysKB-Connector"
+        "User-Agent": "Scuba"
       },
       "queryParameters": {
         "action": "list",
@@ -37,18 +37,14 @@
       "rateLimitQps": 1,
       "queryParametersTemplate": "{{filterParameters}}"
     },
+    "extra": {
+      "transformName": "/ASI/Qualys/QualysKbTransformer"
+    },
     "response": {
       "eventsJsonPaths": [
         "$.KNOWLEDGE_BASE_VULN_LIST_OUTPUT.RESPONSE.VULN_LIST.VULN"
       ],
-      "format": "xml",
-      "successStatusCodes": [
-        200
-      ]
-    },
-    "paging": {
-      "pagingType": "LinkHeader",
-      "linkHeaderTokenJsonPath": "$.KNOWLEDGE_BASE_VULN_LIST_OUTPUT.RESPONSE.WARNING.URL['#cdata-section']"
+      "format": "xml"
     }
   }
 }
