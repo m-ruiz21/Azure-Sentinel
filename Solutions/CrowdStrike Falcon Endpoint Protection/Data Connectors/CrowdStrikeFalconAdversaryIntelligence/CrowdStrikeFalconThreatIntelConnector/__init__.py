@@ -1,17 +1,12 @@
-"""
-CrowdStrike Falcon Adversary Intelligence Connector for Microsoft Sentinel.
-
-This Azure Function fetches threat intelligence indicators from CrowdStrike Falcon
-and uploads them to Microsoft Sentinel in STIX 2.1 format.
-"""
-
+import requests
 import json
 from datetime import datetime, timezone, timedelta
 import uuid
+import os
 import logging
 import hashlib
-import requests
 import azure.functions as func
+import sys
 
 from .utils import (
     StateManager,
@@ -22,163 +17,148 @@ from .utils import (
     STIX_PATTERN_MAPPING,
     APIError,
 )
-from .config import Config
 
 
-def get_look_back_date(config):
+CROWDSTRIKE_CLIENT_ID = os.environ.get("CROWDSTRIKE_CLIENT_ID")
+CROWDSTRIKE_CLIENT_SECRET = os.environ.get("CROWDSTRIKE_CLIENT_SECRET")
+CROWDSTRIKE_BASE_URL = os.environ.get("CROWDSTRIKE_BASE_URL")
+CROWDSTRIKE_TOKEN_EXP = ""
+WORKSPACE_ID = os.environ.get("WORKSPACE_ID")
+TENANT_ID = os.environ.get("TENANT_ID")
+INDICATORS = os.environ.get("INDICATORS")
+LOOK_BACK_DAYS = int(os.environ.get("LOOK_BACK_DAYS", 1))
+if LOOK_BACK_DAYS > 60:
+    LOOK_BACK_DAYS = 60
+AAD_CLIENT_ID = os.environ.get("AAD_CLIENT_ID")
+AAD_CLIENT_SECRET = os.environ.get("AAD_CLIENT_SECRET")
+FILE_STORAGE_CONNECTION_STRING = os.environ.get("FILE_STORAGE_CONNECTION_STRING")
+INDICATOR_COUNT = 0
+USER_AGENT = "microsoft-sentinel-ioc/1.0.0"
+
+CrowdStrikeToken = CrowdStrikeTokenRetriever(
+    crowdstrike_base_url=CROWDSTRIKE_BASE_URL,
+    crowdstrike_client_id=CROWDSTRIKE_CLIENT_ID,
+    crowdstrike_client_secret=CROWDSTRIKE_CLIENT_SECRET,
+)
+AADToken = AADTokenRetriever(
+    aad_client_id=AAD_CLIENT_ID,
+    aad_client_secret=AAD_CLIENT_SECRET,
+    tenant_id=TENANT_ID,
+)
+
+
+CrowdStrike_State = StateManager(
+    connection_string=FILE_STORAGE_CONNECTION_STRING,
+    share_name="csiocstateshare",
+    file_path="_marker",
+)
+
+
+def get_look_back_date():
     """
-    Returns the date for looking back based on the configured look back days.
-
-    Args:
-        config: Configuration object containing look_back_days
-
-    Returns:
-        int: Unix epoch timestamp for the lookback period
+    returns the respective date according to the look back days specified
     """
 
     right_now = datetime.now(timezone.utc)
-    look_back_date = int((right_now - timedelta(days=int(config.look_back_days))).timestamp())
+    look_back_date = (right_now - timedelta(days=int(LOOK_BACK_DAYS))).isoformat()
 
     return look_back_date
 
 
-def parse_indicator_type_filter(config):
+def parse_indicator_type_filter():
     """
-    Parses the configured indicator types into a query filter string.
-
-    Args:
-        config: Configuration object containing indicators
-
-    Returns:
-        str: Formatted query filter string for indicator types
+    returns the indicator type query filter based on the indicators provided
     """
 
-    split_indicators = config.indicators.split(",")
+    split_indicators = INDICATORS.split(",")
     indicator_query_filter = "',type:'".join(split_indicators)
     indicator_query_filter = f"type:'{indicator_query_filter}'"
 
     return indicator_query_filter
 
 
-def get_query_filter(config, state_manager):
+def get_query_filter():
     """
-    Returns the query filter to be used to extract indicators of compromise
-    from the CrowdStrike API.
-
-    Args:
-        config: Configuration object containing indicator settings
-        state_manager: StateManager instance for tracking processing state
-
-    Returns:
-        str: Formatted query filter string for CrowdStrike API
+    returns the query filter to be used to extract indicators of compromise from the crowdstrike api
     """
 
-    indicator_type_filter = parse_indicator_type_filter(config)
-    marker_filter = state_manager.get()
+    indicator_type_filter = parse_indicator_type_filter()
+    marker_filter = CrowdStrike_State.get()
     if marker_filter is None:
-        look_back_date = get_look_back_date(config)
-        # Add confidence filter to match incremental processing behavior
-        # pylint: disable=line-too-long
-        query_filter = f"({indicator_type_filter})+(last_updated:>{look_back_date})"
+        look_back_date = get_look_back_date()
+        query_filter = f"({indicator_type_filter})+(last_updated:>'{look_back_date}')"
     else:
-        # pylint: disable=line-too-long
         query_filter = f"({indicator_type_filter})+(_marker:>'{marker_filter}')+(malicious_confidence:'high')"
 
     return query_filter
 
 
-def fetch_crowdstrike_iocs(config, state_manager, crowdstrike_token):
+def fetch_crowdstrike_iocs():
     """
-    Fetches indicators of compromise from the CrowdStrike API using pagination.
-
-    Args:
-        config: Configuration object containing base URL and other settings
-        state_manager: StateManager instance for tracking processing state
-        crowdstrike_token: CrowdStrikeTokenRetriever instance for authentication
-
-    Yields:
-        tuple: A tuple containing (indicator_batch, marker) for each page of results
-
-    Raises:
-        APIError: If API call returns an error response
-        UnauthorizedTokenException: If authentication fails
+    returns indicators of compromise from the crodwstrike api
     """
 
-    query_filter = get_query_filter(config, state_manager)
+    query_filter = get_query_filter()
 
     response = requests.get(
-        url=f"{config.crowdstrike_base_url}/intel/combined/indicators/v1",
+        url=f"{CROWDSTRIKE_BASE_URL}/intel/combined/indicators/v1",
         params={"filter": query_filter, "sort": "_marker|asc"},
         headers={
-            "Authorization": f"Bearer {crowdstrike_token.get_token()}",
+            "Authorization": f"Bearer {CrowdStrikeToken.get_token()}",
         },
     )
 
-    if response.status_code == 401:
-        raise UnauthorizedTokenException(response)
-    elif response.status_code not in (200, 201):
-        raise APIError(response)
+    if response.status_code not in (200, 201):
+        logging.error(f"Error Code: {response.status_code}")
+        logging.error(f"Error Response: {response.text}")
+        raise APIError(response.text)
+    elif response.status_code == 401:
+        logging.error(f"Error Code: {response.status_code}")
+        logging.error(f"Error Response: {response.text}")
+        raise UnauthorizedTokenException(response.text)
 
     batch = json.loads(response.text)["resources"]
-    if len(batch) == 0:
-        logging.info("No indicators found in initial API response")
-        return  # No indicators to process
-
     marker = batch[-1]["_marker"]
-    logging.info("Found %d indicators in initial batch", len(batch))
 
     while len(batch) > 0:
         yield batch, marker
 
         if "Next-Page" not in response.headers:
-            logging.info("Reached end of paginated results")
             break
         else:
             response = requests.get(
-                url=f"{config.crowdstrike_base_url}/{response.headers['Next-Page']}",
+                url=f"{CROWDSTRIKE_BASE_URL}/{response.headers['Next-Page']}",
                 headers={
-                    "Authorization": f"Bearer {crowdstrike_token.get_token()}",
-                    "User-Agent": config.user_agent,
+                    "Authorization": f"Bearer {CrowdStrikeToken.get_token()}",
+                    "User-Agent": USER_AGENT,
                 },
             )
 
-            if response.status_code == 401:
-                raise UnauthorizedTokenException(response)
-            elif response.status_code not in (200, 201):
-                raise APIError(response)
+            if response.status_code not in (200, 201):
+                logging.error(f"Error Code: {response.status_code}")
+                logging.error(f"Error Response: {response.text}")
+                raise APIError(response.text)
+            elif response.status_code == 401:
+                logging.error(f"Error Code: {response.status_code}")
+                logging.error(f"Error Response: {response.text}")
+                raise UnauthorizedTokenException(response.text)
 
             batch = json.loads(response.text)["resources"]
-            if len(batch) == 0:
-                logging.info("No more indicators found in paginated response")
-                break  # No more indicators in this page
             marker = batch[-1]["_marker"]
-            logging.info("Found %d indicators in next page", len(batch))
 
 
-def generate_uuid(identifier: str):
+def generate_uuid(id: str):
     """
-    Converts a string identifier to a UUID using MD5 hash.
-
-    Args:
-        identifier: String identifier to convert to UUID
-
-    Returns:
-        uuid.UUID: Generated UUID object based on the identifier hash
+    converts a sttring identifier to a guid using the hashvalue
     """
 
-    hash_value = hashlib.md5(identifier.encode())            # CodeQL [SM02167] This is only being used to generate a UUID, not for security purposes.
+    hash_value = hashlib.md5(id.encode())
     return uuid.UUID(hash_value.hexdigest())
 
 
 def convert_to_stix(indicators: list):
     """
-    Converts CrowdStrike indicators of compromise to STIX 2.1 format.
-
-    Args:
-        indicators: List of CrowdStrike indicator dictionaries
-
-    Returns:
-        list: List of STIX 2.1 formatted indicator objects
+    converts crowdstrike indicators of compromise to stix 2.1 format
     """
 
     stix_batch = []
@@ -191,7 +171,7 @@ def convert_to_stix(indicators: list):
             "created": datetime.fromtimestamp(indicator["published_date"]).isoformat(),
             "modified": datetime.fromtimestamp(indicator["last_updated"]).isoformat(),
             "name": indicator["indicator"],
-            "description": "",
+            "descripton": "",
             "indicator_types": indicator["threat_types"],
             "pattern_type": "stix",
             "valid_from": datetime.fromtimestamp(
@@ -225,27 +205,14 @@ def convert_to_stix(indicators: list):
     return stix_batch
 
 
-def send_to_threat_intel(stix_batch, workspace_id, aad_token):
+def send_to_threat_intel(stix_batch):
     """
-    Sends STIX indicators to Microsoft Sentinel Threat Intelligence API.
-
-    Args:
-        stix_batch: List of STIX 2.1 formatted indicator objects
-        workspace_id: Microsoft Sentinel workspace identifier
-        aad_token: AADTokenRetriever instance for authentication
-
-    Returns:
-        requests.Response: HTTP response object from the API call
-
-    Raises:
-        APIError: If API call returns an error response
-        UnauthorizedTokenException: If authentication fails
+    send stix indicators to Microsoft Sentinel Threat Intel api
     """
 
-    # pylint: disable=line-too-long
-    uri = f"https://sentinelus.azure-api.net/workspaces/{workspace_id}/threatintelligenceindicators:upload?api-version=2022-07-01"
+    uri = f"https://sentinelus.azure-api.net/workspaces/{WORKSPACE_ID}/threatintelligenceindicators:upload?api-version=2022-07-01"
     headers = {
-        "Authorization": f"Bearer {aad_token.get_token()}",
+        "Authorization": f"Bearer {AADToken.get_token()}",
         "Content-Type": "application/json",
     }
     body = {
@@ -254,66 +221,34 @@ def send_to_threat_intel(stix_batch, workspace_id, aad_token):
     }
     response = requests.post(uri, data=json.dumps(body), headers=headers)
 
-    if response.status_code == 401:
-        raise UnauthorizedTokenException(response)
-    elif response.status_code not in (200, 201):
-        raise APIError(response)
+    if response.status_code not in (200, 201):
+        logging.error(f"Error Code: {response.status_code}")
+        logging.error(f"Error Response: {response.text}")
+        raise APIError(response.text)
+    elif response.status_code == 401:
+        logging.error(f"Error Code: {response.status_code}")
+        logging.error(f"Error Response: {response.text}")
+        raise UnauthorizedTokenException(response.text)
 
     return response
 
 
-def main(mytimer: func.TimerRequest) -> None:
-    """
-    Main Azure Function entry point that fetches CrowdStrike indicators
-    and uploads them to Microsoft Sentinel as STIX 2.1 format.
+def main(mytimer: func.TimerRequest):
 
-    Args:
-        mytimer: Azure Functions timer trigger request object
-    """
-    # Initialize configuration and validate all required environment variables
-    config = Config()
-    if not config.validate_required_variables():
-        logging.error("Environment variable validation failed. Function execution stopped.")
-        return
-
-    # Initialize services
-    state_manager = StateManager(
-        config.file_storage_connection_string,
-        "csiocstateshare",
-        "_marker"
-    )
-    crowdstrike_token = CrowdStrikeTokenRetriever(
-        config.crowdstrike_client_id,
-        config.crowdstrike_client_secret,
-        config.crowdstrike_base_url
-    )
-    aad_token = AADTokenRetriever(
-        config.tenant_id,
-        config.aad_client_id,
-        config.aad_client_secret
-    )
-
-    logging.info("Starting CrowdStrike Falcon Adversary Intelligence connector execution")
-    indicator_count = 0
-    batch_count = 0
+    global INDICATOR_COUNT
     next_execution = datetime.now(timezone.utc) + timedelta(minutes=10)
 
-    for ioc_batch, marker in fetch_crowdstrike_iocs(config, state_manager, crowdstrike_token):
+    for ioc_batch, marker in fetch_crowdstrike_iocs():
         seconds_to_next_execution = next_execution - datetime.now(timezone.utc)
+        logging.info(seconds_to_next_execution)
         if (
-            seconds_to_next_execution.total_seconds() > 60
+            seconds_to_next_execution.seconds > 60
         ):  # if next execution is 60 seconds away
             stix_batch = convert_to_stix(ioc_batch)
-            send_to_threat_intel(stix_batch, config.workspace_id, aad_token)
-            state_manager.post(marker)
-            indicator_count += len(stix_batch)
-            batch_count += 1
-            logging.info("Batch %d: uploaded %d indicators (total: %d)",
-                        batch_count, len(stix_batch), indicator_count)
+            send_to_threat_intel(stix_batch)
+            CrowdStrike_State.post(marker)
+            INDICATOR_COUNT += len(stix_batch)
+            logging.info(f"{INDICATOR_COUNT} indicators uploaded")
         else:  # exit before next execution
-            logging.info("Less than 60 seconds to next execution. Exiting early...")
-            break
-
-    # Log final summary
-    logging.info("Execution completed: processed %d indicators across %d batches",
-                indicator_count, batch_count)
+            logging.info("less than 60 seconds to next execution. Exiting...")
+            sys.exit("less than 60 seconds to next execution.")

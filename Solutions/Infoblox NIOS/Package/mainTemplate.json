@@ -47,7 +47,7 @@
   },
   "variables": {
     "_solutionName": "Infoblox NIOS",
-    "_solutionVersion": "3.0.5",
+    "_solutionVersion": "3.0.4",
     "solutionId": "azuresentinel.azure-sentinel-solution-infobloxnios",
     "_solutionId": "[variables('solutionId')]",
     "workbookVersion1": "1.1.0",
@@ -68,7 +68,7 @@
       "_parserName2": "[concat(parameters('workspace'),'/','Infoblox_allotherdhcpdTypes')]",
       "_parserId2": "[resourceId('Microsoft.OperationalInsights/workspaces/savedSearches', parameters('workspace'), 'Infoblox_allotherdhcpdTypes')]",
       "parserTemplateSpecName2": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-pr-',uniquestring('Infoblox_allotherdhcpdTypes-Parser')))]",
-      "parserVersion2": "1.1.1",
+      "parserVersion2": "1.1.0",
       "parserContentId2": "Infoblox_allotherdhcpdTypes-Parser"
     },
     "parserObject3": {
@@ -152,7 +152,7 @@
       "_parserName14": "[concat(parameters('workspace'),'/','Infoblox_dhcpother')]",
       "_parserId14": "[resourceId('Microsoft.OperationalInsights/workspaces/savedSearches', parameters('workspace'), 'Infoblox_dhcpother')]",
       "parserTemplateSpecName14": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',concat(parameters('workspace'),'-pr-',uniquestring('Infoblox_dhcpother-Parser')))]",
-      "parserVersion14": "1.1.1",
+      "parserVersion14": "1.1.0",
       "parserContentId14": "Infoblox_dhcpother-Parser"
     },
     "parserObject15": {
@@ -239,7 +239,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox-Workbook-V2 Workbook with template version 3.0.5",
+        "description": "Infoblox-Workbook-V2 Workbook with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('workbookVersion1')]",
@@ -295,6 +295,10 @@
                       "kind": "DataType"
                     },
                     {
+                      "contentId": "InfobloxNIOS",
+                      "kind": "DataConnector"
+                    },
+                    {
                       "contentId": "SyslogAma",
                       "kind": "DataConnector"
                     }
@@ -326,7 +330,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox Data Parser with template version 3.0.5",
+        "description": "Infoblox Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject1').parserVersion1]",
@@ -456,7 +460,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_allotherdhcpdTypes Data Parser with template version 3.0.5",
+        "description": "Infoblox_allotherdhcpdTypes Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject2').parserVersion2]",
@@ -473,7 +477,7 @@
                 "displayName": "Parser for Infoblox_allotherdhcpdTypes",
                 "category": "Microsoft Sentinel Parser",
                 "functionAlias": "Infoblox_allotherdhcpdTypes",
-                "query": "let datasource = (_GetWatchlist('Sources_by_SourceType')| where SearchKey == 'InfobloxNIOS' | project Source);\nSyslog \n    | where CollectorHostName in (datasource) or Computer in (datasource)\n    | where not(SyslogMessage has_any (\"DHCPEXPIRE\",\"DHCPOFFER\",\"DHCPINFORM\",\"DHCPACK\",\"DHCPDISCOVER\",\"DHCPRELEASE\",\"r-l-e\", \"bind\",\"Added\",\"Option\", \"Removed\",\"balanced\",\"balancing\",\"failover\",\"AdminMember\", \"AdminGroup\", \"AccessRight\", \"Login_Denied\", \"Login_Allowed\", \"Created Role\", \"forwardzone\", \"delegatedzone\"))\n    | extend Parser = extract_all(@\"^(\\d{2}\\-[a-zA-Z]{3}\\-\\d{4}\\s[0-9\\.\\:]+)?\\s?([a-zA-Z-_]+)(\\s|\\:)?(.*)\", dynamic([1,2,3,4]), SyslogMessage)[0]\n    | extend responseTime = todatetime(Parser[0]),\n            Log_Type = tostring(Parser[1])\n        | project-away Parser;\n",
+                "query": "let datasource = (_GetWatchlist('Sources_by_SourceType')| where SearchKey == 'InfobloxNIOS' | project Source);\nSyslog \n    | where CollectorHostName in (datasource) or Computer in (datasource)\n    | where not(SyslogMessage has_any (\"DHCPEXPIRE\",\"DHCPOFFER\",\"DHCPINFORM\",\"DHCPACK\",\"DHCPDISCOVER\",\"DHCPRELEASE\",\"DHCPACK\",\"r-l-e\", \"bind\",\"Added\",\"Option\", \"Removed\",\"balanced\",\"balancing\",\"failover\"))\n    | extend Parser = extract_all(@\"^(\\d{2}\\-[a-zA-Z]{3}\\-\\d{4}\\s[0-9\\.\\:]+)?\\s?([a-zA-Z-_]+)(\\s|\\:)?(.*)\", dynamic([1,2,3,4]), SyslogMessage)[0]\n    | extend responseTime = todatetime(Parser[0]),\n            Log_Type = tostring(Parser[1])\n        | project-away Parser;\n",
                 "functionParameters": "",
                 "version": 2,
                 "tags": [
@@ -522,8 +526,8 @@
         "contentId": "[variables('parserObject2').parserContentId2]",
         "contentKind": "Parser",
         "displayName": "Parser for Infoblox_allotherdhcpdTypes",
-        "contentProductId": "[concat(take(variables('_solutionId'),50),'-','pr','-', uniqueString(concat(variables('_solutionId'),'-','Parser','-',variables('parserObject2').parserContentId2,'-', '1.1.1')))]",
-        "id": "[concat(take(variables('_solutionId'),50),'-','pr','-', uniqueString(concat(variables('_solutionId'),'-','Parser','-',variables('parserObject2').parserContentId2,'-', '1.1.1')))]",
+        "contentProductId": "[concat(take(variables('_solutionId'),50),'-','pr','-', uniqueString(concat(variables('_solutionId'),'-','Parser','-',variables('parserObject2').parserContentId2,'-', '1.1.0')))]",
+        "id": "[concat(take(variables('_solutionId'),50),'-','pr','-', uniqueString(concat(variables('_solutionId'),'-','Parser','-',variables('parserObject2').parserContentId2,'-', '1.1.0')))]",
         "version": "[variables('parserObject2').parserVersion2]"
       }
     },
@@ -537,7 +541,7 @@
         "displayName": "Parser for Infoblox_allotherdhcpdTypes",
         "category": "Microsoft Sentinel Parser",
         "functionAlias": "Infoblox_allotherdhcpdTypes",
-        "query": "let datasource = (_GetWatchlist('Sources_by_SourceType')| where SearchKey == 'InfobloxNIOS' | project Source);\nSyslog \n    | where CollectorHostName in (datasource) or Computer in (datasource)\n    | where not(SyslogMessage has_any (\"DHCPEXPIRE\",\"DHCPOFFER\",\"DHCPINFORM\",\"DHCPACK\",\"DHCPDISCOVER\",\"DHCPRELEASE\",\"r-l-e\", \"bind\",\"Added\",\"Option\", \"Removed\",\"balanced\",\"balancing\",\"failover\",\"AdminMember\", \"AdminGroup\", \"AccessRight\", \"Login_Denied\", \"Login_Allowed\", \"Created Role\", \"forwardzone\", \"delegatedzone\"))\n    | extend Parser = extract_all(@\"^(\\d{2}\\-[a-zA-Z]{3}\\-\\d{4}\\s[0-9\\.\\:]+)?\\s?([a-zA-Z-_]+)(\\s|\\:)?(.*)\", dynamic([1,2,3,4]), SyslogMessage)[0]\n    | extend responseTime = todatetime(Parser[0]),\n            Log_Type = tostring(Parser[1])\n        | project-away Parser;\n",
+        "query": "let datasource = (_GetWatchlist('Sources_by_SourceType')| where SearchKey == 'InfobloxNIOS' | project Source);\nSyslog \n    | where CollectorHostName in (datasource) or Computer in (datasource)\n    | where not(SyslogMessage has_any (\"DHCPEXPIRE\",\"DHCPOFFER\",\"DHCPINFORM\",\"DHCPACK\",\"DHCPDISCOVER\",\"DHCPRELEASE\",\"DHCPACK\",\"r-l-e\", \"bind\",\"Added\",\"Option\", \"Removed\",\"balanced\",\"balancing\",\"failover\"))\n    | extend Parser = extract_all(@\"^(\\d{2}\\-[a-zA-Z]{3}\\-\\d{4}\\s[0-9\\.\\:]+)?\\s?([a-zA-Z-_]+)(\\s|\\:)?(.*)\", dynamic([1,2,3,4]), SyslogMessage)[0]\n    | extend responseTime = todatetime(Parser[0]),\n            Log_Type = tostring(Parser[1])\n        | project-away Parser;\n",
         "functionParameters": "",
         "version": 2,
         "tags": [
@@ -586,7 +590,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_allotherdnsTypes Data Parser with template version 3.0.5",
+        "description": "Infoblox_allotherdnsTypes Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject3').parserVersion3]",
@@ -716,7 +720,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_allotherlogTypes Data Parser with template version 3.0.5",
+        "description": "Infoblox_allotherlogTypes Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject4').parserVersion4]",
@@ -846,7 +850,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_dhcp_consolidated Data Parser with template version 3.0.5",
+        "description": "Infoblox_dhcp_consolidated Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject5').parserVersion5]",
@@ -976,7 +980,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_dhcpack Data Parser with template version 3.0.5",
+        "description": "Infoblox_dhcpack Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject6').parserVersion6]",
@@ -1106,7 +1110,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_dhcpadded Data Parser with template version 3.0.5",
+        "description": "Infoblox_dhcpadded Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject7').parserVersion7]",
@@ -1236,7 +1240,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_dhcpbindupdate Data Parser with template version 3.0.5",
+        "description": "Infoblox_dhcpbindupdate Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject8').parserVersion8]",
@@ -1366,7 +1370,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_dhcpdiscover Data Parser with template version 3.0.5",
+        "description": "Infoblox_dhcpdiscover Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject9').parserVersion9]",
@@ -1496,7 +1500,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_dhcpexpire Data Parser with template version 3.0.5",
+        "description": "Infoblox_dhcpexpire Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject10').parserVersion10]",
@@ -1626,7 +1630,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_dhcpinform Data Parser with template version 3.0.5",
+        "description": "Infoblox_dhcpinform Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject11').parserVersion11]",
@@ -1756,7 +1760,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_dhcpoffer Data Parser with template version 3.0.5",
+        "description": "Infoblox_dhcpoffer Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject12').parserVersion12]",
@@ -1886,7 +1890,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_dhcpoption Data Parser with template version 3.0.5",
+        "description": "Infoblox_dhcpoption Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject13').parserVersion13]",
@@ -2016,7 +2020,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_dhcpother Data Parser with template version 3.0.5",
+        "description": "Infoblox_dhcpother Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject14').parserVersion14]",
@@ -2033,7 +2037,7 @@
                 "displayName": "Parser for Infoblox_dhcpother",
                 "category": "Microsoft Sentinel Parser",
                 "functionAlias": "Infoblox_dhcpother",
-                "query": "let datasource = (_GetWatchlist('Sources_by_SourceType')| where SearchKey == 'InfobloxNIOS' | project Source);\nSyslog\n    | where CollectorHostName in (datasource) or Computer in (datasource)\n    | where not(SyslogMessage has_any (\"balanced\",\"balancing\",\"failover\", \"AdminMember\", \"AdminGroup\", \"AccessRight\", \"Login_Denied\", \"Login_Allowed\", \"Created Role\", \"forwardzone\", \"delegatedzone\"))\n    | extend Parser = extract_all(@\"^(\\d{2}\\-[a-zA-Z]{3}\\-\\d{4}\\s[0-9\\.\\:]+)?\\s?([a-zA-Z-_]+)(\\s|\\:)?(.*)\", dynamic([1,2,3,4]), SyslogMessage)[0]\n    | extend responseTime = todatetime(Parser[0]),\n            Log_Type = tostring(Parser[1])\n    | project-away Parser;\n",
+                "query": "let datasource = (_GetWatchlist('Sources_by_SourceType')| where SearchKey == 'InfobloxNIOS' | project Source);\nSyslog\n    | where CollectorHostName in (datasource) or Computer in (datasource)\n    | where not(SyslogMessage has_any (\"balanced\",\"balancing\",\"failover\"))\n    | extend Parser = extract_all(@\"^(\\d{2}\\-[a-zA-Z]{3}\\-\\d{4}\\s[0-9\\.\\:]+)?\\s?([a-zA-Z-_]+)(\\s|\\:)?(.*)\", dynamic([1,2,3,4]), SyslogMessage)[0]\n    | extend responseTime = todatetime(Parser[0]),\n            Log_Type = tostring(Parser[1])\n    | project-away Parser;\n",
                 "functionParameters": "",
                 "version": 2,
                 "tags": [
@@ -2082,8 +2086,8 @@
         "contentId": "[variables('parserObject14').parserContentId14]",
         "contentKind": "Parser",
         "displayName": "Parser for Infoblox_dhcpother",
-        "contentProductId": "[concat(take(variables('_solutionId'),50),'-','pr','-', uniqueString(concat(variables('_solutionId'),'-','Parser','-',variables('parserObject14').parserContentId14,'-', '1.1.1')))]",
-        "id": "[concat(take(variables('_solutionId'),50),'-','pr','-', uniqueString(concat(variables('_solutionId'),'-','Parser','-',variables('parserObject14').parserContentId14,'-', '1.1.1')))]",
+        "contentProductId": "[concat(take(variables('_solutionId'),50),'-','pr','-', uniqueString(concat(variables('_solutionId'),'-','Parser','-',variables('parserObject14').parserContentId14,'-', '1.1.0')))]",
+        "id": "[concat(take(variables('_solutionId'),50),'-','pr','-', uniqueString(concat(variables('_solutionId'),'-','Parser','-',variables('parserObject14').parserContentId14,'-', '1.1.0')))]",
         "version": "[variables('parserObject14').parserVersion14]"
       }
     },
@@ -2097,7 +2101,7 @@
         "displayName": "Parser for Infoblox_dhcpother",
         "category": "Microsoft Sentinel Parser",
         "functionAlias": "Infoblox_dhcpother",
-        "query": "let datasource = (_GetWatchlist('Sources_by_SourceType')| where SearchKey == 'InfobloxNIOS' | project Source);\nSyslog\n    | where CollectorHostName in (datasource) or Computer in (datasource)\n    | where not(SyslogMessage has_any (\"balanced\",\"balancing\",\"failover\", \"AdminMember\", \"AdminGroup\", \"AccessRight\", \"Login_Denied\", \"Login_Allowed\", \"Created Role\", \"forwardzone\", \"delegatedzone\"))\n    | extend Parser = extract_all(@\"^(\\d{2}\\-[a-zA-Z]{3}\\-\\d{4}\\s[0-9\\.\\:]+)?\\s?([a-zA-Z-_]+)(\\s|\\:)?(.*)\", dynamic([1,2,3,4]), SyslogMessage)[0]\n    | extend responseTime = todatetime(Parser[0]),\n            Log_Type = tostring(Parser[1])\n    | project-away Parser;\n",
+        "query": "let datasource = (_GetWatchlist('Sources_by_SourceType')| where SearchKey == 'InfobloxNIOS' | project Source);\nSyslog\n    | where CollectorHostName in (datasource) or Computer in (datasource)\n    | where not(SyslogMessage has_any (\"balanced\",\"balancing\",\"failover\"))\n    | extend Parser = extract_all(@\"^(\\d{2}\\-[a-zA-Z]{3}\\-\\d{4}\\s[0-9\\.\\:]+)?\\s?([a-zA-Z-_]+)(\\s|\\:)?(.*)\", dynamic([1,2,3,4]), SyslogMessage)[0]\n    | extend responseTime = todatetime(Parser[0]),\n            Log_Type = tostring(Parser[1])\n    | project-away Parser;\n",
         "functionParameters": "",
         "version": 2,
         "tags": [
@@ -2146,7 +2150,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_dhcprelease Data Parser with template version 3.0.5",
+        "description": "Infoblox_dhcprelease Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject15').parserVersion15]",
@@ -2276,7 +2280,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_dhcpremoved Data Parser with template version 3.0.5",
+        "description": "Infoblox_dhcpremoved Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject16').parserVersion16]",
@@ -2406,7 +2410,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_dhcprequest Data Parser with template version 3.0.5",
+        "description": "Infoblox_dhcprequest Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject17').parserVersion17]",
@@ -2536,7 +2540,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_dhcpsession Data Parser with template version 3.0.5",
+        "description": "Infoblox_dhcpsession Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject18').parserVersion18]",
@@ -2666,7 +2670,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_dns_consolidated Data Parser with template version 3.0.5",
+        "description": "Infoblox_dns_consolidated Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject19').parserVersion19]",
@@ -2796,7 +2800,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_dnsclient Data Parser with template version 3.0.5",
+        "description": "Infoblox_dnsclient Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject20').parserVersion20]",
@@ -2926,7 +2930,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_dnsgss Data Parser with template version 3.0.5",
+        "description": "Infoblox_dnsgss Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject21').parserVersion21]",
@@ -3056,7 +3060,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "Infoblox_dnszone Data Parser with template version 3.0.5",
+        "description": "Infoblox_dnszone Data Parser with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('parserObject22').parserVersion22]",
@@ -3186,7 +3190,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "ExcessiveNXDOMAINDNSQueries_AnalyticalRules Analytics Rule with template version 3.0.5",
+        "description": "ExcessiveNXDOMAINDNSQueries_AnalyticalRules Analytics Rule with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('analyticRuleObject1').analyticRuleVersion1]",
@@ -3229,13 +3233,13 @@
                 ],
                 "entityMappings": [
                   {
-                    "entityType": "IP",
                     "fieldMappings": [
                       {
-                        "columnName": "SrcIpAddr",
-                        "identifier": "Address"
+                        "identifier": "Address",
+                        "columnName": "SrcIpAddr"
                       }
-                    ]
+                    ],
+                    "entityType": "IP"
                   }
                 ]
               }
@@ -3290,7 +3294,7 @@
         "[extensionResourceId(resourceId('Microsoft.OperationalInsights/workspaces', parameters('workspace')), 'Microsoft.SecurityInsights/contentPackages', variables('_solutionId'))]"
       ],
       "properties": {
-        "description": "PotentialDHCPStarvationAttack_AnalyticalRules Analytics Rule with template version 3.0.5",
+        "description": "PotentialDHCPStarvationAttack_AnalyticalRules Analytics Rule with template version 3.0.4",
         "mainTemplate": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
           "contentVersion": "[variables('analyticRuleObject2').analyticRuleVersion2]",
@@ -3332,13 +3336,13 @@
                 ],
                 "entityMappings": [
                   {
-                    "entityType": "IP",
                     "fieldMappings": [
                       {
-                        "columnName": "SrcIpAddr",
-                        "identifier": "Address"
+                        "identifier": "Address",
+                        "columnName": "SrcIpAddr"
                       }
-                    ]
+                    ],
+                    "entityType": "IP"
                   }
                 ]
               }
@@ -3407,7 +3411,7 @@
       "apiVersion": "2023-04-01-preview",
       "location": "[parameters('workspace-location')]",
       "properties": {
-        "version": "3.0.5",
+        "version": "3.0.4",
         "kind": "Solution",
         "contentSchemaVersion": "3.0.0",
         "displayName": "Infoblox NIOS",
@@ -3563,7 +3567,7 @@
             {
               "kind": "Watchlist",
               "contentId": "[variables('_Sources_by_SourceType')]",
-              "version": "3.0.5"
+              "version": "3.0.4"
             },
             {
               "kind": "Solution",

@@ -156,7 +156,7 @@
                 },
                 "parameterValues": {
                   "accountName": "[[variables('StorageAccountName')]",
-                  "accessKey": "[[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('StorageAccountName')), '2023-04-01').keys[0].value]"
+                  "accessKey": "[[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('StorageAccountName')), '2022-09-01').keys[0].value]"
                 }
               }
             },
@@ -1052,7 +1052,7 @@
             }
           ],
           "metadata": {
-            "title": "[Deprecated] Intel 471 Malware Intelligence to Graph Security",
+            "title": "Intel 471 Malware Intelligence to Graph Security",
             "description": "This playbook ingests malware indicators from Intel 471's Titan API into Microsoft Graph Security as tiIndicator resource type.",
             "prerequisites": [
               "1. An active account in Titan platform, which is available as part of Intel 471's subscriptions. For more information, please contact sales@intel471.com.",
@@ -1131,7 +1131,7 @@
             "KeyVaultName": {
               "type": "String",
               "metadata": {
-                "description": "Name of the pre-existing Key Vault with API credentials. For Titan backend, use keys: TitanUserNameSentinel and TitanAPIKeySentinel. For Verity backend, use keys: VerityUserNameSentinel and VerityAPIKeySentinel"
+                "description": "Name of the pre-existing Key Vault with Titan API credentials. The credentials are expected under following keys: TitanUserNameSentinal nad TitanAPIKeySentinel"
               }
             },
             "WorkspaceID": {
@@ -1146,22 +1146,13 @@
               "metadata": {
                 "description": "How many days of history should be pulled on the first run. Leave 0 to start from the current time."
               }
-            },
-            "Backend": {
-              "defaultValue": "Verity",
-              "type": "String",
-              "allowedValues": [
-                "Titan",
-                "Verity"
-              ],
-              "metadata": {
-                "description": "Select the Intel 471 backend to use: Titan or Verity"
-              }
             }
           },
           "variables": {
             "MicrosoftSentinelConnectionName": "[[concat('sentinel-', parameters('PlaybookName'))]",
             "AzureBlobConnectionName": "[[concat('azureblob-', parameters('PlaybookName'))]",
+            "StorageAccountName": "[[parameters('StorageAccountName')]",
+            "StorageAccountContainerName": "[[parameters('StorageAccountContainerName')]",
             "AzureKeyVaultName": "[[parameters('KeyVaultName')]",
             "AzureKeyVaultConnectionName": "[[concat('keyvault-', parameters('PlaybookName'))]",
             "connection-1": "[[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', variables('workspace-location-inline'), '/managedApis/Azuresentinel')]",
@@ -1200,8 +1191,8 @@
                   "id": "[[variables('_connection-2')]"
                 },
                 "parameterValues": {
-                  "accountName": "[[parameters('StorageAccountName')]",
-                  "accessKey": "[[listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName')), '2023-04-01').keys[0].value]"
+                  "accountName": "[[variables('StorageAccountName')]",
+                  "accessKey": "[[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('StorageAccountName')), '2022-09-01').keys[0].value]"
                 }
               }
             },
@@ -1257,39 +1248,11 @@
                       "type": "String"
                     },
                     "BlobNameCursor": {
-                      "defaultValue": "[variables('blanks')]",
+                      "defaultValue": "cursorSentinel.txt",
                       "type": "String"
                     },
                     "BlobNameFromDate": {
-                      "defaultValue": "[variables('blanks')]",
-                      "type": "String"
-                    },
-                    "ApiURI": {
-                      "defaultValue": "[variables('blanks')]",
-                      "type": "String"
-                    },
-                    "UsernameSecretName": {
-                      "defaultValue": "[variables('blanks')]",
-                      "type": "String"
-                    },
-                    "ApiKeySecretName": {
-                      "defaultValue": "[variables('blanks')]",
-                      "type": "String"
-                    },
-                    "RequestParamFrom": {
-                      "defaultValue": "[variables('blanks')]",
-                      "type": "String"
-                    },
-                    "RequestParamSize": {
-                      "defaultValue": "[variables('blanks')]",
-                      "type": "String"
-                    },
-                    "RequestThreatType": {
-                      "defaultValue": "[variables('blanks')]",
-                      "type": "String"
-                    },
-                    "ResponseFieldCursor": {
-                      "defaultValue": "[variables('blanks')]",
+                      "defaultValue": "fromdateSentinel.txt",
                       "type": "String"
                     },
                     "LookBackDays": {
@@ -1297,10 +1260,6 @@
                       "type": "int"
                     },
                     "WorkspaceID": {
-                      "type": "String"
-                    },
-                    "Backend": {
-                      "defaultValue": "Verity",
                       "type": "String"
                     }
                   },
@@ -1320,54 +1279,35 @@
                   },
                   "actions": {
                     "CollectAndSubmitIndicators": {
-                      "type": "Until",
-                      "expression": "@equals(variables('hasResults'), false)",
-                      "limit": {
-                        "count": 60,
-                        "timeout": "PT1H"
-                      },
                       "actions": {
                         "CursorNotNull": {
-                          "type": "If",
-                          "expression": {
-                            "and": [
-                              {
-                                "not": {
-                                  "equals": [
-                                    "@body('Parse_JSON')?[parameters('ResponseFieldCursor')]",
-                                    "@null"
-                                  ]
-                                }
-                              }
-                            ]
-                          },
                           "actions": {
                             "StoreCursor": {
+                              "runAfter": {
+                                "UpdateCursor": [
+                                  "Succeeded"
+                                ]
+                              },
                               "type": "ApiConnection",
                               "inputs": {
+                                "body": "@string(variables('cursor'))",
+                                "headers": {
+                                  "ReadFileMetadataFromServer": true
+                                },
                                 "host": {
                                   "connection": {
                                     "name": "@parameters('$connections')['azureblob']['connectionId']"
                                   }
                                 },
                                 "method": "put",
-                                "body": "@string(variables('cursor'))",
-                                "headers": {
-                                  "ReadFileMetadataFromServer": true
-                                },
-                                "path": "/v2/datasets/@{uriComponent(uriComponent(parameters('StorageAccountName')))}/files/@{uriComponent(uriComponent(parameters('StorageAccountContainerName'),'/',parameters('BlobNameCursor')))}"
-                              },
-                              "runAfter": {
-                                "UpdateCursor": [
-                                  "Succeeded"
-                                ]
+                                "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('StorageAccountName')))}/files/@{encodeURIComponent(encodeURIComponent(parameters('StorageAccountContainerName'),'/',parameters('BlobNameCursor')))}"
                               }
                             },
                             "UpdateCursor": {
                               "type": "SetVariable",
                               "inputs": {
                                 "name": "cursor",
-                                "value": "@body('Parse_JSON')?[parameters('ResponseFieldCursor')]"
+                                "value": "@body('Parse_JSON')?['cursorNext']"
                               }
                             }
                           },
@@ -1375,264 +1315,383 @@
                             "Parse_JSON": [
                               "Succeeded"
                             ]
-                          }
-                        },
-                        "HTTP": {
-                          "type": "Http",
-                          "inputs": {
-                            "uri": "@parameters('ApiURI')",
-                            "method": "GET",
-                            "headers": {
-                              "User-Agent": "Intel 471 - Malware Intelligence Sentinel - Azure Logic App 4.0.0"
-                            },
-                            "queries": "@if(equals(variables('cursor'), 'null'), variables('payload'), setProperty(variables('payload'), 'cursor', variables('cursor')))",
-                            "authentication": {
-                              "password": "@body('GetApiKey')?['value']",
-                              "type": "Basic",
-                              "username": "@body('GetUsername')?['value']"
-                            }
-                          }
-                        },
-                        "Parse_JSON": {
-                          "type": "ParseJson",
-                          "inputs": {
-                            "content": "@body('HTTP')",
-                            "schema": {
-                              "type": "object",
-                              "properties": {
-                                "count": {
-                                  "type": "integer"
-                                },
-                                "indicatorTotalCount": {
-                                  "type": "integer"
-                                },
-                                "cursorNext": {
-                                  "type": "string"
-                                },
-                                "cursor_next": {
-                                  "type": "string"
-                                },
-                                "indicators": {
-                                  "type": "array",
-                                  "items": {
-                                    "type": "object"
-                                  }
-                                }
-                              }
-                            }
                           },
-                          "runAfter": {
-                            "HTTP": [
-                              "Succeeded"
-                            ]
-                          }
-                        },
-                        "SetHasResults": {
-                          "type": "SetVariable",
-                          "inputs": {
-                            "name": "hasResults",
-                            "value": "@not(empty(body('Parse_JSON')?['indicators']))"
-                          },
-                          "runAfter": {
-                            "CursorNotNull": [
-                              "Succeeded"
-                            ]
-                          }
-                        },
-                        "BackendIsVerity": {
-                          "type": "If",
                           "expression": {
                             "and": [
                               {
-                                "equals": [
-                                  "@parameters('Backend')",
-                                  "Verity"
-                                ]
+                                "not": {
+                                  "equals": [
+                                    "@body('Parse_JSON')?['cursorNext']",
+                                    "@null"
+                                  ]
+                                }
                               }
                             ]
                           },
+                          "type": "If"
+                        },
+                        "FilterIndicators": {
                           "actions": {
-                            "FilterExpiredVerity": {
-                              "type": "Query",
-                              "inputs": {
-                                "from": "@coalesce(body('Parse_JSON')?['indicators'], json('[]'))",
-                                "where": "@greater(ticks(item()?['expiration_ts']), ticks(utcNow()))"
-                              }
-                            },
-                            "MapIndicatorsVerity": {
-                              "type": "Select",
-                              "inputs": {
-                                "from": "@body('FilterExpiredVerity')",
-                                "select": {
-                                  "confidence": "@item()?['confidence']",
-                                  "created": "@item()?['activity']?['first_seen_ts']",
-                                  "description": "@if(empty(item()?['description']), concat('Intel 471 - ', item()?['threat']?['data']?['malware_family']?['name']), concat('Intel 471 - ', item()?['description']))",
-                                  "external_references": [
-                                    {
-                                      "external_id": "@item()['threat']['data']['malware_family']['id']",
-                                      "source_name": "intel471",
-                                      "url": "@concat('https://verity.intel471.com/malware/families/', item()['threat']['data']['malware_family']['id'])"
+                            "Each_indicator": {
+                              "foreach": "@body('Parse_JSON')?['indicators']",
+                              "actions": {
+                                "Condition": {
+                                  "actions": {
+                                    "Append_indicator": {
+                                      "type": "AppendToArrayVariable",
+                                      "inputs": {
+                                        "name": "collectedIndicators",
+                                        "value": "@setProperty(setProperty(items('Each_indicator'), 'composedHashValue', ''), 'composedHashType', '')"
+                                      }
                                     }
-                                  ],
-                                  "id": "@replace(item()?['id'], 'malware-', '')",
-                                  "indicator_types": [
-                                    "malicious-activity"
-                                  ],
-                                  "kill_chain_phases": "@item()?['kill_chain_phases']",
-                                  "labels": "@if(empty(item()?['threat']?['data']?['malware_family']?['name']), createArray(), createArray(item()?['threat']?['data']?['malware_family']?['name']))",
-                                  "modified": "@utcNow()",
-                                  "name": "@if(empty(item()?['threat']?['data']?['malware_family']?['name']), item()?['id'], item()?['threat']?['data']?['malware_family']?['name'])",
-                                  "object_marking_refs": [
-                                    "marking-definition--f88d31f6-486f-44da-b317-01333bde0b82"
-                                  ],
-                                  "pattern": "@item()?['pattern']",
-                                  "pattern_type": "stix",
-                                  "spec_version": "2.1",
-                                  "type": "indicator",
-                                  "valid_from": "@item()?['activity']?['first_seen_ts']",
-                                  "valid_until": "@item()?['expiration_ts']",
-                                  "revoked": "@coalesce(item()?['revocation']?['revoked'], false)"
-                                }
-                              },
-                              "runAfter": {
-                                "FilterExpiredVerity": [
-                                  "Succeeded"
-                                ]
-                              }
-                            },
-                            "CollectIndicatorsVerity": {
-                              "type": "SetVariable",
-                              "inputs": {
-                                "name": "collectedIndicators",
-                                "value": "@body('MapIndicatorsVerity')"
-                              },
-                              "runAfter": {
-                                "MapIndicatorsVerity": [
-                                  "Succeeded"
-                                ]
-                              }
-                            }
-                          },
-                          "else": {
-                            "actions": {
-                              "FilterExpiredTitan": {
-                                "type": "Query",
-                                "inputs": {
-                                  "from": "@coalesce(body('Parse_JSON')?['indicators'], json('[]'))",
-                                  "where": "@greater(item()?['data']?['expiration'], div(sub(ticks(utcNow()), ticks('1970-01-01')), 10000))"
-                                }
-                              },
-                              "MapIndicatorsTitan": {
-                                "type": "Select",
-                                "inputs": {
-                                  "from": "@body('FilterExpiredTitan')",
-                                  "select": {
-                                    "confidence": "@if(equals(item()?['data']?['confidence'], 'high'), 85, if(equals(item()?['data']?['confidence'], 'medium'), 50, 15))",
-                                    "created": "@{addToTime('1970-01-01T00:00:00Z', div(item()?['activity']['first'], 1000), 'second')}",
-                                    "description": "@concat('Intel 471 - ', item()?['data']?['context']?['description'])",
-                                    "external_references": [
+                                  },
+                                  "expression": {
+                                    "and": [
                                       {
-                                        "external_id": "@item()['data']['threat']['uid']",
-                                        "source_name": "intel471",
-                                        "url": "@concat('https://titan.intel471.com/malware/', item()['data']['threat']['uid'])"
+                                        "greater": [
+                                          "@items('Each_indicator')?['data']?['expiration']",
+                                          "@div(sub(ticks(utcNow()),ticks('1970-01-01')), 10000)"
+                                        ]
                                       }
-                                    ],
-                                    "id": "@concat('indicator--', guid())",
-                                    "indicator_types": [
-                                      "malicious-activity"
-                                    ],
-                                    "kill_chain_phases": [
-                                      {
-                                        "kill_chain_name": "lockheed-martin-cyber-kill-chain",
-                                        "phase_name": "@if(equals(item()?['data']?['mitre_tactics'], 'command_and_control'), 'C2', if(equals(item()?['data']?['mitre_tactics'], 'stage_capabilities'), 'Installation', if(equals(item()?['data']?['mitre_tactics'], 'initial_access'), 'Exploitation', '')))"
-                                      }
-                                    ],
-                                    "labels": "@createArray(item()['data']['threat']['data']['family'])",
-                                    "modified": "@{addToTime('1970-01-01T00:00:00Z', div(item()?['last_updated'], 1000), 'second')}",
-                                    "name": "@item()['data']['threat']['data']['family']",
-                                    "object_marking_refs": [
-                                      "marking-definition--f88d31f6-486f-44da-b317-01333bde0b82"
-                                    ],
-                                    "pattern": "@if(equals(item()?['data']?['indicator_type'], 'url'), concat('[url:value = ''', item()?['data']?['indicator_data']?['url'], ''']'), if(equals(item()?['data']?['indicator_type'], 'ipv4'), concat('[ipv4-addr:value = ''', item()?['data']?['indicator_data']?['address'], ''']'),    concat('[file:hashes.md5 = ''', item()?['data']?['indicator_data']?['file']?['md5'], ''' OR file:hashes.sha1 = ''', item()?['data']?['indicator_data']?['file']?['sha1'], ''' OR file:hashes.sha256 = ''', item()?['data']?['indicator_data']?['file']?['sha256'], ''']')      ))",
-                                    "pattern_type": "stix",
-                                    "spec_version": "2.1",
-                                    "type": "indicator",
-                                    "valid_from": "@{addToTime('1970-01-01T00:00:00Z', div(item()?['activity']['first'], 1000), 'second')}",
-                                    "valid_until": "@addToTime('1970-01-01T00:00:00Z', div(item()?['data']['expiration'], 1000), 'second')"
-                                  }
-                                },
-                                "runAfter": {
-                                  "FilterExpiredTitan": [
-                                    "SUCCEEDED"
-                                  ]
+                                    ]
+                                  },
+                                  "type": "If"
                                 }
                               },
-                              "CollectIndicatorsTitan": {
-                                "type": "SetVariable",
-                                "inputs": {
-                                  "name": "collectedIndicators",
-                                  "value": "@body('MapIndicatorsTitan')"
-                                },
-                                "runAfter": {
-                                  "MapIndicatorsTitan": [
-                                    "SUCCEEDED"
-                                  ]
-                                }
-                              }
+                              "type": "Foreach"
                             }
                           },
                           "runAfter": {
                             "SetHasResults": [
                               "Succeeded"
                             ]
-                          }
-                        },
-                        "HasFilteredResults": {
-                          "type": "If",
+                          },
                           "expression": {
                             "and": [
                               {
                                 "equals": [
-                                  "@not(empty(variables('collectedIndicators')))",
+                                  "@variables('hasResults')",
                                   true
                                 ]
                               }
                             ]
                           },
+                          "type": "If"
+                        },
+                        "HTTP": {
+                          "type": "Http",
+                          "inputs": {
+                            "authentication": {
+                              "password": "@body('GetApiKey')?['value']",
+                              "type": "Basic",
+                              "username": "@body('GetUsername')?['value']"
+                            },
+                            "headers": {
+                              "User-Agent": "Intel 471 - Malware Intelligence Sentinel - Azure Logic App 1.0.0"
+                            },
+                            "method": "GET",
+                            "queries": "@if(equals(variables('cursor'), 'null'), variables('payload'), setProperty(variables('payload'), 'cursor', variables('cursor')))",
+                            "uri": "https://api.intel471.com/v1/indicators/stream"
+                          }
+                        },
+                        "IfIndicators": {
                           "actions": {
-                            "Threat_Intelligence_-_Upload_STIX_Objects_(Preview)": {
+                            "ClearCollectedIndicators": {
+                              "runAfter": {
+                                "Threat_Intelligence_-_Upload_Indicators_of_Compromise_(V2)_(Preview)": [
+                                  "Succeeded"
+                                ]
+                              },
+                              "type": "SetVariable",
+                              "inputs": {
+                                "name": "collectedIndicators",
+                                "value": "[variables('TemplateEmptyArray')]"
+                              }
+                            },
+                            "MapIndicatorsToTiIndicators": {
+                              "type": "Select",
+                              "inputs": {
+                                "from": "@variables('collectedIndicators')",
+                                "select": {
+                                  "confidence": "@if(equals(item()?['data']?['confidence'], 'high'), 85, if(equals(item()?['data']?['confidence'], 'medium'), 50, 15))",
+                                  "created": "@{addToTime('1970-01-01T00:00:00Z', div(item()?['activity']['first'], 1000), 'second')}",
+                                  "description": "@concat('Intel 471 - ', item()?['data']?['context']?['description'])",
+                                  "external_references": [
+                                    {
+                                      "external_id": "@item()['data']['threat']['uid']",
+                                      "source_name": "intel471",
+                                      "url": "@concat('https://titan.intel471.com/malware/', item()['data']['threat']['uid'])"
+                                    }
+                                  ],
+                                  "id": "@concat('indicator--', guid())",
+                                  "indicator_types": [
+                                    "malicious-activity"
+                                  ],
+                                  "kill_chain_phases": [
+                                    {
+                                      "kill_chain_name": "lockheed-martin-cyber-kill-chain",
+                                      "phase_name": "@if(equals(item()?['data']?['mitre_tactics'], 'command_and_control'), 'C2', if(equals(item()?['data']?['mitre_tactics'], 'stage_capabilities'), 'Installation', if(equals(item()?['data']?['mitre_tactics'], 'initial_access'), 'Exploitation', '')))"
+                                    }
+                                  ],
+                                  "labels": "@createArray(item()['data']['threat']['data']['family'])",
+                                  "modified": "@{addToTime('1970-01-01T00:00:00Z', div(item()?['last_updated'], 1000), 'second')}",
+                                  "name": "@item()['data']['threat']['data']['family']",
+                                  "object_marking_refs": [
+                                    "marking-definition--f88d31f6-486f-44da-b317-01333bde0b82"
+                                  ],
+                                  "pattern": "@if(equals(item()?['data']?['indicator_type'], 'url'), concat('[url:value = ''', item()?['data']?['indicator_data']?['url'], ''']'), if(equals(item()?['data']?['indicator_type'], 'ipv4'), concat('[ipv4-addr:value = ''', item()?['data']?['indicator_data']?['address'], ''']'),    concat('[file:hashes.md5 = ''', item()?['data']?['indicator_data']?['file']?['md5'], ''' OR file:hashes.sha1 = ''', item()?['data']?['indicator_data']?['file']?['sha1'], ''' OR file:hashes.sha256 = ''', item()?['data']?['indicator_data']?['file']?['sha256'], ''']')      ))",
+                                  "pattern_type": "stix",
+                                  "spec_version": "2.1",
+                                  "type": "indicator",
+                                  "valid_from": "@{addToTime('1970-01-01T00:00:00Z', div(item()?['activity']['first'], 1000), 'second')}",
+                                  "valid_until": "@addToTime('1970-01-01T00:00:00Z', div(item()?['data']['expiration'], 1000), 'second')"
+                                }
+                              }
+                            },
+                            "Threat_Intelligence_-_Upload_Indicators_of_Compromise_(V2)_(Preview)": {
+                              "runAfter": {
+                                "MapIndicatorsToTiIndicators": [
+                                  "Succeeded"
+                                ]
+                              },
                               "type": "ApiConnection",
                               "inputs": {
+                                "body": {
+                                  "indicators": "@body('MapIndicatorsToTiIndicators')",
+                                  "sourcesystem": "Intel 471 Titan"
+                                },
                                 "host": {
                                   "connection": {
                                     "name": "@parameters('$connections')['azuresentinel']['connectionId']"
                                   }
                                 },
                                 "method": "post",
-                                "body": {
-                                  "stixobjects": "@variables('collectedIndicators')",
-                                  "sourcesystem": "Intel 471 @{parameters('Backend')}"
-                                },
-                                "path": "/ThreatIntelligence/@{encodeURIComponent(uriComponent(parameters('WorkspaceID')))}/UploadStixObjects/"
-                              }
-                            },
-                            "ClearCollectedIndicators": {
-                              "type": "SetVariable",
-                              "inputs": {
-                                "name": "collectedIndicators",
-                                "value": "[variables('TemplateEmptyArray')]"
-                              },
-                              "runAfter": {
-                                "Threat_Intelligence_-_Upload_STIX_Objects_(Preview)": [
-                                  "Succeeded"
-                                ]
+                                "path": "/V2/ThreatIntelligence/@{encodeURIComponent(parameters('WorkspaceID'))}/UploadIndicators/"
                               }
                             }
                           },
                           "runAfter": {
-                            "BackendIsVerity": [
+                            "FilterIndicators": [
                               "Succeeded"
                             ]
+                          },
+                          "expression": {
+                            "and": [
+                              {
+                                "greater": [
+                                  "@length(variables('collectedIndicators'))",
+                                  0
+                                ]
+                              }
+                            ]
+                          },
+                          "type": "If"
+                        },
+                        "Parse_JSON": {
+                          "runAfter": {
+                            "HTTP": [
+                              "Succeeded"
+                            ]
+                          },
+                          "type": "ParseJson",
+                          "inputs": {
+                            "content": "@body('HTTP')",
+                            "schema": {
+                              "properties": {
+                                "cursorNext": {
+                                  "type": "string"
+                                },
+                                "indicators": {
+                                  "items": {
+                                    "properties": {
+                                      "activity": {
+                                        "properties": {
+                                          "first": {
+                                            "type": "integer"
+                                          },
+                                          "last": {
+                                            "type": "integer"
+                                          }
+                                        },
+                                        "type": "object"
+                                      },
+                                      "data": {
+                                        "properties": {
+                                          "confidence": {
+                                            "type": "string"
+                                          },
+                                          "context": {
+                                            "properties": {
+                                              "description": {
+                                                "type": "string"
+                                              }
+                                            },
+                                            "type": "object"
+                                          },
+                                          "expiration": {
+                                            "type": "integer"
+                                          },
+                                          "indicator_data": {
+                                            "properties": {
+                                              "address": {
+                                                "type": "string"
+                                              },
+                                              "file": {
+                                                "properties": {
+                                                  "download_url": {
+                                                    "type": "string"
+                                                  },
+                                                  "md5": {
+                                                    "type": "string"
+                                                  },
+                                                  "sha1": {
+                                                    "type": "string"
+                                                  },
+                                                  "sha256": {
+                                                    "type": "string"
+                                                  },
+                                                  "size": {
+                                                    "type": "integer"
+                                                  },
+                                                  "ssdeep": {
+                                                    "type": "string"
+                                                  },
+                                                  "type": {
+                                                    "type": "string"
+                                                  }
+                                                },
+                                                "type": "object"
+                                              },
+                                              "geo_ip": {
+                                                "properties": {
+                                                  "city": {
+                                                    "type": "string"
+                                                  },
+                                                  "country": {
+                                                    "type": "string"
+                                                  },
+                                                  "country_code": {
+                                                    "type": "string"
+                                                  },
+                                                  "isp": {
+                                                    "properties": {
+                                                      "autonomous_system": {
+                                                        "type": "string"
+                                                      },
+                                                      "isp": {
+                                                        "type": "string"
+                                                      },
+                                                      "network": {
+                                                        "type": "string"
+                                                      },
+                                                      "organization": {
+                                                        "type": "string"
+                                                      }
+                                                    },
+                                                    "type": "object"
+                                                  },
+                                                  "subdivision": {
+                                                    "items": {
+                                                      "type": "string"
+                                                    },
+                                                    "type": "array"
+                                                  }
+                                                },
+                                                "type": "object"
+                                              },
+                                              "url": {
+                                                "type": "string"
+                                              }
+                                            },
+                                            "type": "object"
+                                          },
+                                          "indicator_type": {
+                                            "type": "string"
+                                          },
+                                          "intel_requirements": {
+                                            "items": {
+                                              "type": "string"
+                                            },
+                                            "type": "array"
+                                          },
+                                          "mitre_tactics": {
+                                            "type": "string"
+                                          },
+                                          "source_id": {
+                                            "type": "string"
+                                          },
+                                          "threat": {
+                                            "properties": {
+                                              "data": {
+                                                "properties": {
+                                                  "family": {
+                                                    "type": "string"
+                                                  },
+                                                  "malware_family_profile_uid": {
+                                                    "type": "string"
+                                                  },
+                                                  "version": {
+                                                    "type": "string"
+                                                  }
+                                                },
+                                                "type": "object"
+                                              },
+                                              "type": {
+                                                "type": "string"
+                                              },
+                                              "uid": {
+                                                "type": "string"
+                                              }
+                                            },
+                                            "type": "object"
+                                          },
+                                          "uid": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "type": "object"
+                                      },
+                                      "last_updated": {
+                                        "type": "integer"
+                                      },
+                                      "meta": {
+                                        "properties": {
+                                          "version": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "type": "object"
+                                      },
+                                      "uid": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "activity",
+                                      "data",
+                                      "last_updated",
+                                      "meta",
+                                      "uid"
+                                    ],
+                                    "type": "object"
+                                  },
+                                  "type": "array"
+                                }
+                              },
+                              "type": "object"
+                            }
+                          }
+                        },
+                        "SetHasResults": {
+                          "runAfter": {
+                            "CursorNotNull": [
+                              "Succeeded"
+                            ]
+                          },
+                          "type": "SetVariable",
+                          "inputs": {
+                            "name": "hasResults",
+                            "value": "@contains(body('Parse_JSON'), 'indicators')"
                           }
                         }
                       },
@@ -1640,9 +1699,20 @@
                         "InitIntel471Payload": [
                           "Succeeded"
                         ]
-                      }
+                      },
+                      "expression": "@equals(variables('hasResults'), false)",
+                      "limit": {
+                        "count": 60,
+                        "timeout": "PT1H"
+                      },
+                      "type": "Until"
                     },
                     "GetApiKey": {
+                      "runAfter": {
+                        "GetUsername": [
+                          "Succeeded"
+                        ]
+                      },
                       "type": "ApiConnection",
                       "inputs": {
                         "host": {
@@ -1651,15 +1721,15 @@
                           }
                         },
                         "method": "get",
-                        "path": "@concat('/secrets/', parameters('ApiKeySecretName'), '/value')"
-                      },
-                      "runAfter": {
-                        "GetUsername": [
-                          "Succeeded"
-                        ]
+                        "path": "/secrets/@{encodeURIComponent('TitanAPIKeySentinel')}/value"
                       }
                     },
                     "GetCursorFromBlob": {
+                      "runAfter": {
+                        "InitCollectedIndicators": [
+                          "Succeeded"
+                        ]
+                      },
                       "type": "ApiConnection",
                       "inputs": {
                         "host": {
@@ -1668,35 +1738,30 @@
                           }
                         },
                         "method": "get",
-                        "path": "/v2/datasets/@{uriComponent(uriComponent(parameters('StorageAccountName')))}/files/@{uriComponent(uriComponent(parameters('StorageAccountContainerName'),'/',parameters('BlobNameCursor')))}/content",
+                        "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('StorageAccountName')))}/files/@{encodeURIComponent(encodeURIComponent(parameters('StorageAccountContainerName'),'/',parameters('BlobNameCursor')))}/content",
                         "queries": {
                           "inferContentType": true
                         }
-                      },
-                      "runAfter": {
-                        "InitVariables": [
-                          "Succeeded"
-                        ]
                       }
                     },
                     "GetFromDateFromBlob": {
-                      "type": "ApiConnection",
-                      "inputs": {
-                        "host": {
-                          "connection": {
-                            "name": "@parameters('$connections')['azureblob']['connectionId']"
-                          }
-                        },
-                        "method": "get",
-                        "path": "/v2/datasets/@{uriComponent(uriComponent(parameters('StorageAccountName')))}/files/@{uriComponent(uriComponent(parameters('StorageAccountContainerName'),'/',parameters('BlobNameFromDate')))}/content",
-                        "queries": {
-                          "inferContentType": true
-                        }
-                      },
                       "runAfter": {
                         "IfCursorBlobExists": [
                           "Succeeded"
                         ]
+                      },
+                      "type": "ApiConnection",
+                      "inputs": {
+                        "host": {
+                          "connection": {
+                            "name": "@parameters('$connections')['azureblob']['connectionId']"
+                          }
+                        },
+                        "method": "get",
+                        "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('StorageAccountName')))}/files/@{encodeURIComponent(encodeURIComponent(parameters('StorageAccountContainerName'),'/',parameters('BlobNameFromDate')))}/content",
+                        "queries": {
+                          "inferContentType": true
+                        }
                       }
                     },
                     "GetUsername": {
@@ -1708,23 +1773,10 @@
                           }
                         },
                         "method": "get",
-                        "path": "@concat('/secrets/', parameters('UsernameSecretName'), '/value')"
+                        "path": "/secrets/@{encodeURIComponent('TitanUserNameSentinel')}/value"
                       }
                     },
                     "IfCursorBlobExists": {
-                      "type": "If",
-                      "expression": {
-                        "and": [
-                          {
-                            "not": {
-                              "equals": [
-                                "@actions('GetCursorFromBlob').outputs.statusCode",
-                                404
-                              ]
-                            }
-                          }
-                        ]
-                      },
                       "actions": {
                         "SetCursor": {
                           "type": "SetVariable",
@@ -1734,22 +1786,28 @@
                           }
                         }
                       },
+                      "runAfter": {
+                        "GetCursorFromBlob": [
+                          "Succeeded",
+                          "Failed"
+                        ]
+                      },
                       "else": {
                         "actions": {
                           "CreateBlobForCursor": {
                             "type": "ApiConnection",
                             "inputs": {
+                              "body": "null",
+                              "headers": {
+                                "ReadFileMetadataFromServer": true
+                              },
                               "host": {
                                 "connection": {
                                   "name": "@parameters('$connections')['azureblob']['connectionId']"
                                 }
                               },
                               "method": "post",
-                              "body": "null",
-                              "headers": {
-                                "ReadFileMetadataFromServer": true
-                              },
-                              "path": "/v2/datasets/@{uriComponent(uriComponent(parameters('StorageAccountName')))}/files",
+                              "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('StorageAccountName')))}/files",
                               "queries": {
                                 "folderPath": "@parameters('StorageAccountContainerName')",
                                 "name": "@parameters('BlobNameCursor')",
@@ -1764,27 +1822,21 @@
                           }
                         }
                       },
-                      "runAfter": {
-                        "GetCursorFromBlob": [
-                          "Succeeded",
-                          "Failed"
-                        ]
-                      }
-                    },
-                    "IfFromDateBlobExists": {
-                      "type": "If",
                       "expression": {
                         "and": [
                           {
                             "not": {
                               "equals": [
-                                "@actions('GetFromDateFromBlob').outputs.statusCode",
+                                "@actions('GetCursorFromBlob').outputs.statusCode",
                                 404
                               ]
                             }
                           }
                         ]
                       },
+                      "type": "If"
+                    },
+                    "IfFromDateBlobExists": {
                       "actions": {
                         "SetFromDateFromBlob": {
                           "type": "SetVariable",
@@ -1794,32 +1846,38 @@
                           }
                         }
                       },
+                      "runAfter": {
+                        "GetFromDateFromBlob": [
+                          "Succeeded",
+                          "Failed"
+                        ]
+                      },
                       "else": {
                         "actions": {
                           "CreateBlobForFromDate": {
+                            "runAfter": {
+                              "SetFromDate": [
+                                "Succeeded"
+                              ]
+                            },
                             "type": "ApiConnection",
                             "inputs": {
+                              "body": "@variables('fromDate')",
+                              "headers": {
+                                "ReadFileMetadataFromServer": true
+                              },
                               "host": {
                                 "connection": {
                                   "name": "@parameters('$connections')['azureblob']['connectionId']"
                                 }
                               },
                               "method": "post",
-                              "body": "@variables('fromDate')",
-                              "headers": {
-                                "ReadFileMetadataFromServer": true
-                              },
-                              "path": "/v2/datasets/@{uriComponent(uriComponent(parameters('StorageAccountName')))}/files",
+                              "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent(parameters('StorageAccountName')))}/files",
                               "queries": {
                                 "folderPath": "@parameters('StorageAccountContainerName')",
                                 "name": "@parameters('BlobNameFromDate')",
                                 "queryParametersSingleEncoded": true
                               }
-                            },
-                            "runAfter": {
-                              "SetFromDate": [
-                                "Succeeded"
-                              ]
                             },
                             "runtimeConfiguration": {
                               "contentTransfer": {
@@ -1836,14 +1894,76 @@
                           }
                         }
                       },
+                      "expression": {
+                        "and": [
+                          {
+                            "not": {
+                              "equals": [
+                                "@actions('GetFromDateFromBlob').outputs.statusCode",
+                                404
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "type": "If"
+                    },
+                    "InitCollectedIndicators": {
                       "runAfter": {
-                        "GetFromDateFromBlob": [
-                          "Succeeded",
-                          "Failed"
+                        "InitFromDate": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "InitializeVariable",
+                      "inputs": {
+                        "variables": [
+                          {
+                            "name": "collectedIndicators",
+                            "type": "array",
+                            "value": "[variables('TemplateEmptyArray')]"
+                          }
                         ]
                       }
                     },
-                    "InitVariables": {
+                    "InitCursor": {
+                      "runAfter": {
+                        "InitHasResults": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "InitializeVariable",
+                      "inputs": {
+                        "variables": [
+                          {
+                            "name": "cursor",
+                            "type": "string",
+                            "value": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "InitFromDate": {
+                      "runAfter": {
+                        "InitCursor": [
+                          "Succeeded"
+                        ]
+                      },
+                      "type": "InitializeVariable",
+                      "inputs": {
+                        "variables": [
+                          {
+                            "name": "fromDate",
+                            "type": "integer"
+                          }
+                        ]
+                      }
+                    },
+                    "InitHasResults": {
+                      "runAfter": {
+                        "GetApiKey": [
+                          "Succeeded"
+                        ]
+                      },
                       "type": "InitializeVariable",
                       "inputs": {
                         "variables": [
@@ -1851,30 +1971,16 @@
                             "name": "hasResults",
                             "type": "boolean",
                             "value": true
-                          },
-                          {
-                            "name": "cursor",
-                            "type": "string",
-                            "value": "null"
-                          },
-                          {
-                            "name": "fromDate",
-                            "type": "integer"
-                          },
-                          {
-                            "name": "collectedIndicators",
-                            "type": "array",
-                            "value": "[variables('TemplateEmptyArray')]"
                           }
-                        ]
-                      },
-                      "runAfter": {
-                        "GetApiKey": [
-                          "Succeeded"
                         ]
                       }
                     },
                     "InitIntel471Payload": {
+                      "runAfter": {
+                        "IfFromDateBlobExists": [
+                          "Succeeded"
+                        ]
+                      },
                       "type": "InitializeVariable",
                       "inputs": {
                         "variables": [
@@ -1882,16 +1988,10 @@
                             "name": "payload",
                             "type": "object",
                             "value": {
-                              "@{parameters('RequestParamSize')}": 100,
-                              "@{parameters('RequestThreatType')}": "malware",
-                              "@{parameters('RequestParamFrom')}": "@{variables('fromDate')}"
+                              "count": 100,
+                              "lastUpdatedFrom": "@variables('fromDate')"
                             }
                           }
-                        ]
-                      },
-                      "runAfter": {
-                        "IfFromDateBlobExists": [
-                          "Succeeded"
                         ]
                       }
                     }
@@ -1927,47 +2027,17 @@
                       }
                     }
                   },
-                  "WorkspaceID": {
-                    "value": "[[parameters('WorkspaceID')]"
-                  },
                   "StorageAccountName": {
-                    "value": "[[parameters('StorageAccountName')]"
+                    "value": "[[variables('StorageAccountName')]"
                   },
                   "StorageAccountContainerName": {
-                    "value": "[[parameters('StorageAccountContainerName')]"
-                  },
-                  "BlobNameCursor": {
-                    "value": "[[if(equals(parameters('Backend'), 'Titan'), 'cursorSentinel.txt', 'cursorVerity.txt')]"
-                  },
-                  "BlobNameFromDate": {
-                    "value": "[[if(equals(parameters('Backend'), 'Titan'), 'fromdateSentinel.txt', 'fromdateVerity.txt')]"
-                  },
-                  "ApiURI": {
-                    "value": "[[if(equals(parameters('Backend'), 'Titan'), 'https://api.intel471.com/v1/indicators/stream', 'https://api.intel471.cloud/integrations/indicators/v1/indicators/stream')]"
-                  },
-                  "UsernameSecretName": {
-                    "value": "[[if(equals(parameters('Backend'), 'Titan'), 'TitanUserNameSentinel', 'VerityUserNameSentinel')]"
-                  },
-                  "ApiKeySecretName": {
-                    "value": "[[if(equals(parameters('Backend'), 'Titan'), 'TitanAPIKeySentinel', 'VerityAPIKeySentinel')]"
-                  },
-                  "RequestParamFrom": {
-                    "value": "[[if(equals(parameters('Backend'), 'Titan'), 'lastUpdatedFrom', 'from')]"
-                  },
-                  "RequestParamSize": {
-                    "value": "[[if(equals(parameters('Backend'), 'Titan'), 'count', 'size')]"
-                  },
-                  "RequestThreatType": {
-                    "value": "[[if(equals(parameters('Backend'), 'Titan'), 'threatType', 'threat_type')]"
-                  },
-                  "ResponseFieldCursor": {
-                    "value": "[[if(equals(parameters('Backend'), 'Titan'), 'cursorNext', 'cursor_next')]"
+                    "value": "[[variables('StorageAccountContainerName')]"
                   },
                   "LookBackDays": {
                     "value": "[[parameters('LookBackDays')]"
                   },
-                  "Backend": {
-                    "value": "[[parameters('Backend')]"
+                  "WorkspaceID": {
+                    "value": "[[parameters('WorkspaceID')]"
                   }
                 }
               }
@@ -2000,20 +2070,21 @@
           ],
           "metadata": {
             "title": "Intel 471 Malware Intelligence to Sentinel",
-            "description": "This playbook ingests malware indicators from Intel 471's Titan or Verity API into Microsoft Sentinel as tiIndicator resource type.",
+            "description": "This playbook ingests malware indicators from Intel 471's Titan API into Microsoft Sentinel as tiIndicator resource type.",
             "prerequisites": [
-              "1. An active account in Titan or Verity platform, which is available as part of Intel 471's subscriptions. For more information, please contact sales@intel471.com.",
-              "2. Titan or Verity API credentials.",
-              "3. Pre-existing [Key Vault](https://docs.microsoft.com/azure/key-vault/general/basic-concepts) for securely storing API credentials. Store Titan API credentials as secrets under `TitanUserNameSentinel` and `TitanAPIKeySentinel` keys, or Verity API credentials under `VerityUserNameSentinel` and `VerityAPIKeySentinel` keys.",
+              "1. An active account in Titan platform, which is available as part of Intel 471's subscriptions. For more information, please contact sales@intel471.com.",
+              "2. Titan API credentials.",
+              "3. Pre-existing [Key Vault](https://docs.microsoft.com/azure/key-vault/general/basic-concepts) for securely storing Titan API credentials. Store Titan API credentials as secrets under `TitanUserNameSentinel` and `TitanAPIKeySentinel` keys.",
               "4. Pre-existing [Storage account](https://learn.microsoft.com/azure/storage/common/storage-account-overview) with blob container already created for persisting data such as cursor between the API calls.",
               "5. Threat Intelligence connector enabled in Sentinel. Go to Sentinel instance → 'Content hub' and install 'Threat Intelligence' solution."
             ],
             "postDeployment": [
               "1. Go to the Key Vault. Select `Access control (IAM)` → `+ Add` → `Add role assignment`. Choose `Key Vault Secrets User`. On the next screen hit `+ Select members`, search for Intel 471 and select newly created logic app. Select it and proceed with granting access rights.",
               "2. Go to the selected Log Analytics workspace and repeat step 1. except grant role `Microsoft Sentinel Contributor`.",
-              "3. Optionally change the schedule's frequency in `Recurrence` block (the first one)."
+              "3. Go to created `Logic App` → `Edit`. Navigate to `CollectAndSubmitIndicators → IfIndicators → True → Threat Intelligence - Upload Indicators of Compromise (V2) (Preview)` block. Inside this block create a new connection. Select `Connect with managed identity`, provide connection name and click `Create`.",
+              "4. Optionally change the schedule's frequency in `Recurrence` block (the first one)."
             ],
-            "lastUpdateTime": "2025-11-20T00:00:00Z",
+            "lastUpdateTime": "2023-06-21T00:00:00Z",
             "entities": [
               "ip",
               "filehash",
@@ -2054,7 +2125,7 @@
         "contentSchemaVersion": "3.0.0",
         "displayName": "Intel471",
         "publisherDisplayName": "Intel 471",
-        "descriptionHtml": "<p><strong>Note:</strong> Please refer to the following before installing the solution:</p>\n<p>• Review the solution <a href=\"https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Intel471/ReleaseNotes.md\">Release Notes</a></p>\n<p>• There may be <a href=\"https://aka.ms/sentinelsolutionsknownissues\">known issues</a> pertaining to this Solution, please refer to them before installing.</p>\n<p>Intel 471 Threat Intelligence integration ingests malware indicators into Log Analytics workspace.</p>\n<p><strong>Playbooks:</strong> 2</p>\n<p><a href=\"https://aka.ms/azuresentinel\">Learn more about Microsoft Sentinel</a> | <a href=\"https://aka.ms/azuresentinelsolutionsdoc\">Learn more about Solutions</a></p>\n",
+        "descriptionHtml": "<p><strong>Note:</strong> <em>There may be <a href=\"https://aka.ms/sentinelsolutionsknownissues\">known issues</a> pertaining to this Solution, please refer to them before installing.</em></p>\n<p>Intel 471 Threat Intelligence integration ingests malware indicators into Log Analytics workspace.</p>\n<p><strong>Playbooks:</strong> 2</p>\n<p><a href=\"https://aka.ms/azuresentinel\">Learn more about Microsoft Sentinel</a> | <a href=\"https://aka.ms/azuresentinelsolutionsdoc\">Learn more about Solutions</a></p>\n",
         "contentKind": "Solution",
         "contentProductId": "[variables('_solutioncontentProductId')]",
         "id": "[variables('_solutioncontentProductId')]",

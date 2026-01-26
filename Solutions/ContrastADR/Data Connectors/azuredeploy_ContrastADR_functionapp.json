@@ -10,22 +10,17 @@
         },
         "LOG_ANALYTICS_SHARED_KEY": {
             "type": "string",
-            "metadata": {
-                "description": "* The shared key for the Log Analytics workspace (Required)"
-            }
+            "defaultValue": ""
         },
         "LOG_ANALYTICS_WORKSPACE_ID": {
             "type": "string",
-            "metadata": {
-                "description": "* The ID of the Log Analytics workspace (Required)"
-            }
+            "defaultValue": ""
         },
         "AppInsightsWorkspaceResourceID": {
             "type": "string",
-            "metadata": {
-                "description": "* The Application Insights workspace resource ID (Required)"
-            }
+            "defaultValue": ""
         }
+
     },
     "variables": {
         "FunctionName": "[concat(toLower(parameters('FunctionName')), uniqueString(resourceGroup().id))]",

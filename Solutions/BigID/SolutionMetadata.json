@@ -1,5 +1,5 @@
 {
-	"publisherId": "big-id",
+	"publisherId": "bigid",
 	"offerId": "azure-sentinel-solution-bigid",
 	"firstPublishDate": "2025-10-07",
 	"providers": ["BigID"],

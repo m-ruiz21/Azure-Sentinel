@@ -246,9 +246,7 @@ $sqsArn = ((aws sqs get-queue-attributes --queue-url $sqsUrl --attribute-names Q
 Write-Log -Message $sqsArn -LogFileName $LogFileName -Severity Verbose
 
 $kmsConfirmation = Read-ValidatedHost -Prompt 'Do you want to enable KMS for CloudTrail? [y/n]' -ValidationType Confirm
-$kmsEnabled = $kmsConfirmation -eq 'y'
-
-if ($kmsEnabled) {
+if ($kmsConfirmation -eq 'y') {
 	New-KMS
 	$kmsArn = ($kmsKeyDescription | ConvertFrom-Json).KeyMetadata.Arn 
 	$kmsKeyId = ($kmsKeyDescription | ConvertFrom-Json).KeyMetadata.KeyId
@@ -293,7 +291,7 @@ Set-RetryAction({
 	
 		$isCloudTrailNotExist = $lastexitcode -ne 0
 		if ($isCloudTrailNotExist) {
-			if ($kmsEnabled) {
+			if ($kmsConfirmation -eq 'y') {
 				Write-Log -Message "Executing: aws cloudtrail create-trail --name $cloudTrailName --s3-bucket-name $bucketName --kms-key-id $kmsKeyId --tags-list $(ConvertTo-Json -InputObject @($(Get-SentinelTagInJsonFormat) | ConvertFrom-Json) -Depth 99 -Compress) 2>&1" -LogFileName $LogFileName -Severity Verbose
 				$tempForOutput = aws cloudtrail create-trail --name $cloudTrailName --s3-bucket-name $bucketName --kms-key-id $kmsKeyId --tags-list $(ConvertTo-Json -InputObject @($(Get-SentinelTagInJsonFormat) | ConvertFrom-Json) -Depth 99 -Compress) 2>&1
 				Write-Log -Message $tempForOutput -LogFileName $LogFileName -Severity Verbose
@@ -311,9 +309,9 @@ Set-RetryAction({
 			$cloudTrailBucketConfirmation = Read-ValidatedHost "Trail '${cloudTrailName}' is already configured. Do you want to override the bucket destination? [y/n]"
 		
 			if ($cloudTrailBucketConfirmation -eq 'y') {
-				if ($kmsEnabled) {
-					Write-Log -Message "Executing: aws cloudtrail update-trail --name $cloudTrailName --s3-bucket-name $bucketName --kms-key-id $kmsKeyId | Out-Null" -LogFileName $LogFileName -Severity Verbose
-					aws cloudtrail update-trail --name $cloudTrailName --s3-bucket-name $bucketName --kms-key-id $kmsKeyId | Out-Null
+				if ($kmsConfirmation -eq 'y') {
+					Write-Log -Message "Executing: aws cloudtrail update-trail --name $cloudTrailName --s3-bucket-name $bucketName -kms-key-id $kmsKeyId | Out-Null" -LogFileName $LogFileName -Severity Verbose
+					aws cloudtrail update-trail --name $cloudTrailName --s3-bucket-name $bucketName -kms-key-id $kmsKeyId | Out-Null
 				}
 				else {
 					Write-Log -Message "Executing: aws cloudtrail update-trail --name $cloudTrailName --s3-bucket-name $bucketName | Out-Null" -LogFileName $LogFileName -Severity Verbose

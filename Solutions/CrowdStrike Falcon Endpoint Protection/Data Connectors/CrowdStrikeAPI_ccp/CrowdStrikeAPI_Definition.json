@@ -101,8 +101,7 @@
             "requiredPermissions": {
               "write": true,
               "read": true,
-              "delete": true,
-              "action": false
+              "delete": true
             }
           }
         ]
@@ -110,8 +109,14 @@
       "instructionSteps": [
         {
           "title": "Configuration steps for the CrowdStrike API",
-          "description": "Follow the instructions below to obtain your CrowdStrike API credentials. Click [here](https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/CrowdStrike%20Falcon%20Endpoint%20Protection/Data%20Connectors/CrowdStrikeAPI_ccp#crowdstrike-falcon--api-data-connector-ccp-framework) for full details.",
+          "description": "Follow the instructions below to obtain your CrowdStrike API credentials.",
           "instructions": [
+            {
+              "type": "Markdown",
+              "parameters": {
+                "content": "#### Configuration steps for the CrowdStrike API\nFollow the instructions below to obtain your CrowdStrike API credentials."
+              }
+            },
             {
               "type": "Markdown",
               "parameters": {
@@ -130,10 +135,7 @@
                 "label": "Base API URL",
                 "placeholder": "https://api.us-2.crowdstrike.com",
                 "type": "text",
-                "name": "apiUrl",
-                "validations": {
-                  "required": true
-                }
+                "name": "apiUrl"
               }
             },
             {
@@ -142,10 +144,7 @@
                 "label": "Client ID",
                 "placeholder": "Your Client ID",
                 "type": "text",
-                "name": "clientId",
-                "validations": {
-                  "required": true
-                }
+                "name": "clientId"
               }
             },
             {
@@ -154,10 +153,7 @@
                 "label": "Client Secret",
                 "placeholder": "Your Client Secret",
                 "type": "password",
-                "name": "clientSecret",
-                "validations": {
-                  "required": true
-                }
+                "name": "clientSecret"
               }
             },
             {

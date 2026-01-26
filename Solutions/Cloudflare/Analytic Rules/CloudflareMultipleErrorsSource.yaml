@@ -23,10 +23,11 @@ query: |
   | where HttpRequestMethod =~ 'GET'
   | summarize err_cnt = count() by SrcIpAddr, bin(TimeGenerated, 5m)
   | where err_cnt > threshold
+  | extend IPCustomEntity = SrcIpAddr
 entityMappings:
   - entityType: IP
     fieldMappings:
       - identifier: Address
-        columnName: SrcIpAddr
-version: 1.0.1
+        columnName: IPCustomEntity
+version: 1.0.0
 kind: Scheduled

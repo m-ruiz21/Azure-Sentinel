@@ -23,10 +23,11 @@ query: |
   | where isnotempty(HttpUserAgentOriginal)
   | summarize d_ua = dcount(HttpUserAgentOriginal) by SrcIpAddr, bin(TimeGenerated, 3m)
   | where d_ua > threshold
+  | extend IPCustomEntity = SrcIpAddr
 entityMappings:
   - entityType: IP
     fieldMappings:
       - identifier: Address
-        columnName: SrcIpAddr
-version: 1.0.1
+        columnName: IPCustomEntity
+version: 1.0.0
 kind: Scheduled

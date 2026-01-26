@@ -47,7 +47,7 @@
         "OffsetParaName": "offset"
       },
       "shouldJoinNestedData": true,
-      "joinedDataStepName": "dspmCase",
+      "joinedDataStepName": "case",
       "stepInfo": {
         "stepType": "Nested",
         "nextSteps": [
@@ -88,7 +88,7 @@
         },
         "fetchObjectsDetails": {
           "shouldJoinNestedData": true,
-          "joinedDataStepName": "expand",
+          "joinedDataStepName": "affectedObjects",
           "request": {
             "httpMethod": "GET",
             "apiEndpoint": "https://{{bigidFqdn}}/api/v1/data-catalog/",
@@ -107,9 +107,6 @@
             "format": "json"
           }
         }
-      },
-      "extra": {
-        "nestedTransformName": "/ASI/Microsoft/MvExpandTransformer"
       }
     }
   }

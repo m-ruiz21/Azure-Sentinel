@@ -181,9 +181,7 @@
                         {
                             "Sid": "StmtAllowReceiveDeleteChangeVisibility",
                             "Effect": "Allow",
-                            "Principal": {
-                                "Service": "s3.amazonaws.com"
-                            },
+                            "Principal": "*",
                             "Action": [
                                 "SQS:ReceiveMessage",
                                 "SQS:DeleteMessage",

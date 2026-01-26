@@ -18,6 +18,7 @@ from azure.core.exceptions import ClientAuthenticationError
 from azure.identity import (
     AzureCliCredential,
     ChainedTokenCredential,
+    DefaultAzureCredential,
     ManagedIdentityCredential,
 )
 
@@ -78,8 +79,11 @@ def main(mytimer: func.TimerRequest) -> None:
     try:
         managed_identity = ManagedIdentityCredential()
         azure_cli = AzureCliCredential()
+        default_azure_credential = DefaultAzureCredential(
+            exclude_shared_token_cache_credential=True
+        )
         credential_chain = ChainedTokenCredential(
-            managed_identity, azure_cli
+            managed_identity, azure_cli, default_azure_credential
         )
         token_meta = credential_chain.get_token(client_id)
         token = token_meta.token

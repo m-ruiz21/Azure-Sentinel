@@ -2007,7 +2007,7 @@
             },
             {
               "name": "WEBSITE_RUN_FROM_PACKAGE",
-              "value": "https://aka.ms/sentinel-BloodHoundEnterprise-functionapp"
+              "value": "https://github.com/metron-labs/Azure-Sentinel/blob/bloodhound/Solutions/BloodHound%20Enterprise/Data%20Connectors/BloodHoundDataConnector/BloodHoundAzureFunction.zip?raw=true"
             },
             {
               "name": "BLOODHOUND_TENANT_DOMAIN",

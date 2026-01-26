@@ -73,7 +73,7 @@
               "parameters": {
                 "mapping": [
                   {
-                    "columnName": "Github Enterprise API URL",
+                    "columnName": "Github Enterprise URL",
                     "columnValue": "properties.addOnAttributes.ApiUrl"
                   }
                 ],
@@ -88,21 +88,16 @@
                 "isPrimary": true,
                 "label": "Add Enterprise",
                 "title": "Add Enterprise",
+                "subtitle": "Enter the credentials",
                 "contextPaneType": "DataConnectorsContextPane",
                 "instructionSteps": [
                   {
                     "instructions": [
                       {
-                        "parameters": {
-                          "content": "Enter your Github Enterprise API URL and API key. Github Enterprise API URL formats:\n* `https://api.github.com/enterprises/{enterprise}`\n* `https://api.{subdomain}.ghe.com/enterprises/{enterprise}`"
-                        },
-                        "type": "Markdown"
-                      },
-                      {
                         "type": "Textbox",
                         "parameters": {
-                          "label": "Github Enterprise API URL",
-                          "placeholder": "Your Github Enterprise API URL",
+                          "label": "Github Enterprise URL",
+                          "placeholder": "Your Github Enterprise URL",
                           "type": "text",
                           "name": "ApiUrl"
                         }

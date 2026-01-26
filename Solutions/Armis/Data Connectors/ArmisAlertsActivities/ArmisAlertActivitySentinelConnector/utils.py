@@ -19,6 +19,8 @@ class Utils:
         self.check_environment_var_exist(
             [
                 {"ArmisURL": consts.URL},
+                {"WorkspaceID": consts.WORKSPACE_ID},
+                {"WorkspaceKey": consts.WORKSPACE_KEY},
                 {"ArmisSecretKey": consts.API_KEY},
                 {"AzureWebJobsStorage": consts.CONNECTION_STRING},
                 {"ArmisAlertsTableName": consts.ARMIS_ALERTS_TABLE},

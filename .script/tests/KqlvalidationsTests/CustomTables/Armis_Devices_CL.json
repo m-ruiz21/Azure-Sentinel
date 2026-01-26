@@ -37,75 +37,31 @@
     "Type": "string"
   },
   {
-    "Name": "AccessSwitch",
-    "Type": "string"
-  },
-  {
-    "Name": "Boundaries",
-    "Type": "string"
-  },
-  {
-    "Name": "BoundaryObjects",
-    "Type": "string"
-  },
-  {
-    "Name": "BusinessImpact",
-    "Type": "string"
-  },
-  {
     "Name": "Category",
     "Type": "string"
   },
   {
-    "Name": "CustomProperties",
-    "Type": "string"
-  },
-  {
-    "Name": "DataSources",
-    "Type": "string"
-  },
-  {
-    "Name": "DisplayTitle",
+    "Name": "FirmwareVersion",
     "Type": "string"
   },
   {
     "Name": "FirstSeen",
-    "Type": "datetime"
+    "Type": "string"
   },
   {
     "Name": "Id",
-    "Type": "real"
+    "Type": "string"
   },
   {
     "Name": "IPAddress",
     "Type": "string"
   },
   {
-    "Name": "IPAddresses",
-    "Type": "string"
-  },
-  {
-    "Name": "IPv6",
-    "Type": "string"
-  },
-  {
-    "Name": "Armis_Device_Time",
-    "Type": "datetime"
-  },
-  {
     "Name": "LastSeen",
-    "Type": "datetime"
+    "Type": "string"
   },
   {
     "Name": "MacAddress",
-    "Type": "string"
-  },
-  {
-    "Name": "MacAddresses",
-    "Type": "string"
-  },
-  {
-    "Name": "Manufacturer",
     "Type": "string"
   },
   {
@@ -113,19 +69,7 @@
     "Type": "string"
   },
   {
-    "Name": "Name",
-    "Type": "string"
-  },
-  {
-    "Name": "Names",
-    "Type": "string"
-  },
-  {
-    "Name": "NamesList",
-    "Type": "string"
-  },
-  {
-    "Name": "OperatingSystem",
+    "Name": "Manufacturer",
     "Type": "string"
   },
   {
@@ -133,19 +77,19 @@
     "Type": "string"
   },
   {
-    "Name": "Protections",
+    "Name": "OperatingSystem",
+    "Type": "string"
+  },
+  {
+    "Name": "PlcModule",
     "Type": "string"
   },
   {
     "Name": "PurdueLevel",
-    "Type": "real"
+    "Type": "string"
   },
   {
     "Name": "RiskLevel",
-    "Type": "real"
-  },
-  {
-    "Name": "Sensor",
     "Type": "string"
   },
   {
@@ -157,10 +101,6 @@
     "Type": "string"
   },
   {
-    "Name": "Site",
-    "Type": "string"
-  },
-  {
     "Name": "SiteLocation",
     "Type": "string"
   },
@@ -169,43 +109,11 @@
     "Type": "string"
   },
   {
-    "Name": "SiteObject",
-    "Type": "string"
-  },
-  {
-    "Name": "SiteObject_Id",
-    "Type": "real"
-  },
-  {
-    "Name": "SiteObject_Location",
-    "Type": "string"
-  },
-  {
-    "Name": "SiteObject_Name",
-    "Type": "string"
-  },
-  {
-    "Name": "SiteObject_Tier",
-    "Type": "string"
-  },
-  {
     "Name": "Tags",
     "Type": "string"
   },
   {
-    "Name": "Tier",
-    "Type": "string"
-  },
-  {
-    "Name": "DeviceType",
-    "Type": "string"
-  },
-  {
-    "Name": "TypeEnum",
-    "Type": "string"
-  },
-  {
-    "Name": "UserIds",
+    "Name": "Type",
     "Type": "string"
   },
   {
@@ -213,11 +121,11 @@
     "Type": "string"
   },
   {
-    "Name": "FirmwareVersion",
+    "Name": "Name",
     "Type": "string"
   },
   {
-    "Name": "PlcModule",
+    "Name": "Type",
     "Type": "string"
   },
   {

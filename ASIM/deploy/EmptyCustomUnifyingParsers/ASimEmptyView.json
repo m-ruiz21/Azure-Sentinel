@@ -32,7 +32,7 @@
           ],
           "properties": {
             "etag": "*",
-            "displayName": "ASim Empty View",
+            "displayName": "Web Session ASIM filtering parser",
             "category": "Security",
             "FunctionAlias": "ASimEmptyView",
             "query": "datatable (EventType:string) []\n",

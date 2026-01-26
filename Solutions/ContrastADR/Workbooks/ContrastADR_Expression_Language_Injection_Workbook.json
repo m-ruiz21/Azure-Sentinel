@@ -256,7 +256,9 @@
       "name": " Post-Incident Activities"
     }
   ],
-  "fallbackResourceIds": [],
-  "fromTemplateId": "sentinel-ContrastADRExpressionLanguageInjection",
+  "fallbackResourceIds": [
+    "/subscriptions/688d2b8c-8ea1-475f-b020-64528c9f5516/resourcegroups/contrastadr/providers/microsoft.operationalinsights/workspaces/devsentinel"
+  ],
+  "fromTemplateId": "sentinel-UserWorkbook",
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
 }

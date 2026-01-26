@@ -21,15 +21,16 @@ query: |
   let ip_reputation = dynamic(['unknown', 'badHost', 'greylist', 'securityScanner', 'scan', 'tor']);
   Cloudflare
   | where ClientIPClass in~ (ip_reputation)
-  | extend CompleteUrl = strcat(HttpRequestHeaderHost,ClientRequestPath)
+  | extend IPCustomEntity = SrcIpAddr
+  | extend UrlCustomEntity = ClientRequestURI
 entityMappings:
   - entityType: IP
     fieldMappings:
       - identifier: Address
-        columnName: SrcIpAddr
+        columnName: IPCustomEntity
   - entityType: URL
     fieldMappings:
       - identifier: Url
-        columnName: CompleteUrl
-version: 1.0.1
+        columnName: UrlCustomEntity
+version: 1.0.0
 kind: Scheduled
