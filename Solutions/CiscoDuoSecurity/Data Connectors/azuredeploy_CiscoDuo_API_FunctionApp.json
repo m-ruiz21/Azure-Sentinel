@@ -16,7 +16,7 @@
             "type": "securestring",
             "defaultValue": ""
         },
-        "Cisco Duo API Hostanme": {
+        "Cisco Duo API Hostname": {
             "type": "securestring",
             "defaultValue": ""
         },
