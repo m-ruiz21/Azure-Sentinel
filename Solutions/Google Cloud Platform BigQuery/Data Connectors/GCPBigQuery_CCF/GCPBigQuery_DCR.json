@@ -1,0 +1,57 @@
+[
+  {
+    "name": "GCPBigQueryDCR",
+    "apiVersion": "2022-06-01",
+    "type": "Microsoft.Insights/dataCollectionRules",
+    "location": "{{location}}",
+    "properties": {
+      "dataCollectionEndpointId": "{{dataCollectionEndpointId}}",
+      "streamDeclarations": {
+        "Custom-GCPBigQuery": {
+          "columns": [
+            {
+              "name": "TimeGenerated",
+              "type": "datetime"
+            },
+            {
+              "name": "ProjectId",
+              "type": "string"
+            },
+            {
+              "name": "DatasetId",
+              "type": "string"
+            },
+            {
+              "name": "TableId",
+              "type": "string"
+            },
+            {
+              "name": "Record",
+              "type": "dynamic"
+            }
+          ]
+        }
+      },
+      "destinations": {
+        "logAnalytics": [
+          {
+            "workspaceResourceId": "{{workspaceResourceId}}",
+            "name": "clv2ws1"
+          }
+        ]
+      },
+      "dataFlows": [
+        {
+          "streams": [
+            "Custom-GCPBigQuery"
+          ],
+          "destinations": [
+            "clv2ws1"
+          ],
+          "transformKql": "source | project TimeGenerated, ProjectId, DatasetId, TableId, Record",
+          "outputStream": "Custom-GCPBigQuery_CL"
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,115 @@
+{
+  "name": "GCPBigQueryCCFDefinition",
+  "apiVersion": "2022-09-01-preview",
+  "type": "Microsoft.SecurityInsights/dataConnectorDefinitions",
+  "location": "{{location}}",
+  "kind": "Customizable",
+  "properties": {
+    "connectorUiConfig": {
+      "id": "GCPBigQueryCCFDefinition",
+      "title": "Google Cloud Platform BigQuery (via Codeless Connector Framework)",
+      "publisher": "Microsoft",
+      "descriptionMarkdown": "Ingest BigQuery rows exported to Google Cloud Pub/Sub into Microsoft Sentinel using the Codeless Connector Framework. Configure a [BigQuery continuous query](https://cloud.google.com/bigquery/docs/export-to-pubsub) to publish JSON messages using the envelope in the [setup guide](https://github.com/Azure/Azure-Sentinel/blob/master/Solutions/Google%20Cloud%20Platform%20BigQuery/Data%20Connectors/README.md). The connector stores each row in the dynamic Record column of GCPBigQuery_CL. This connector does not query BigQuery directly or collect BigQuery audit logs. BigQuery continuous queries require an Enterprise or Enterprise Plus reservation with a CONTINUOUS assignment; BigQuery, Pub/Sub, and Microsoft Sentinel charges apply.",
+      "graphQueriesTableName": "GCPBigQuery_CL",
+      "graphQueries": [
+        {
+          "metricName": "Total events received",
+          "legend": "BigQuery exported rows",
+          "baseQuery": "{{graphQueriesTableName}}"
+        }
+      ],
+      "sampleQueries": [
+        {
+          "description": "Latest exported BigQuery rows",
+          "query": "{{graphQueriesTableName}}\n| top 10 by TimeGenerated desc"
+        },
+        {
+          "description": "Exported row counts by source table",
+          "query": "{{graphQueriesTableName}}\n| where TimeGenerated > ago(24h)\n| summarize Rows = count() by ProjectId, DatasetId, TableId"
+        }
+      ],
+      "dataTypes": [
+        {
+          "name": "{{graphQueriesTableName}}",
+          "lastDataReceivedQuery": "{{graphQueriesTableName}}\n| summarize Time = max(TimeGenerated)\n| where isnotempty(Time)"
+        }
+      ],
+      "connectivityCriteria": [
+        {
+          "type": "HasDataConnectors"
+        }
+      ],
+      "availability": {
+        "status": 1,
+        "isPreview": true
+      },
+      "permissions": {
+        "resourceProvider": [
+          {
+            "provider": "Microsoft.OperationalInsights/workspaces",
+            "permissionsDisplayText": "Read and Write permissions are required.",
+            "providerDisplayName": "Workspace",
+            "scope": "Workspace",
+            "requiredPermissions": {
+              "read": true,
+              "write": true,
+              "delete": true,
+              "action": false
+            }
+          }
+        ],
+        "customs": [
+          {
+            "name": "Google Cloud Pub/Sub and BigQuery",
+            "description": "A BigQuery continuous query publishing the documented JSON envelope to a schema-free Pub/Sub topic, a dedicated pull subscription, and a federated service account with pubsub.subscriptions.get and pubsub.subscriptions.consume permissions are required. See the setup guide for exporter permissions and reservation requirements."
+          }
+        ]
+      },
+      "instructionSteps": [
+        {
+          "title": "Connect BigQuery exports to Microsoft Sentinel",
+          "instructions": [
+            {
+              "type": "Markdown",
+              "parameters": {
+                "content": "#### 1. Configure the BigQuery export\nFollow the [setup guide](https://github.com/Azure/Azure-Sentinel/blob/master/Solutions/Google%20Cloud%20Platform%20BigQuery/Data%20Connectors/README.md) to create a schema-free Pub/Sub topic and a dedicated pull subscription. Run the provided EXPORT DATA continuous query with format CLOUD_PUBSUB. Each message must be a JSON object containing TimeGenerated, ProjectId, DatasetId, TableId, and a nested Record object. Do not use a Cloud Logging sink or publish unwrapped rows."
+              }
+            },
+            {
+              "type": "MarkdownControlEnvBased",
+              "parameters": {
+                "prodScript": "#### 2. Configure workload identity federation\nUse the shared [GCP authentication setup](https://github.com/Azure/Azure-Sentinel/tree/master/DataConnectors/GCP/Terraform/sentinel_resources_creation/GCPInitialAuthenticationSetup), or reuse an existing Sentinel workload identity pool, provider, and subscriber service account. The pool ID must be your Microsoft Entra tenant ID without hyphens. Grant the subscriber account permission to get and consume messages from the dedicated subscription. Keep it separate from the BigQuery exporter service account. No service account key is required.",
+                "govScript": "#### 2. Configure workload identity federation\nUse the [Azure Government GCP authentication setup](https://github.com/Azure/Azure-Sentinel/tree/master/DataConnectors/GCP/Terraform/sentinel_resources_creation_gov/GCPInitialAuthenticationSetupGov), or reuse an existing Sentinel workload identity pool, provider, and subscriber service account configured for Azure Government. The pool ID must be your Microsoft Entra tenant ID without hyphens. Grant the subscriber account permission to get and consume messages from the dedicated subscription. Keep it separate from the BigQuery exporter service account. No service account key is required."
+              }
+            },
+            {
+              "type": "CopyableLabel",
+              "parameters": {
+                "label": "Tenant ID: Use this value for the GCP authentication setup.",
+                "fillWith": [
+                  "TenantId"
+                ],
+                "name": "TenantId",
+                "disabled": true
+              }
+            },
+            {
+              "type": "Markdown",
+              "parameters": {
+                "content": "#### 3. Connect a collector\nSelect Add new collector. Enter the Pub/Sub project ID and project number, subscription name, workload identity provider ID, and subscriber service account email from the setup guide, then select Connect. Append a test row to the source BigQuery table and query GCPBigQuery_CL to verify ingestion."
+              }
+            },
+            {
+              "type": "GCPGrid",
+              "parameters": {}
+            },
+            {
+              "type": "GCPContextPane",
+              "parameters": {}
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

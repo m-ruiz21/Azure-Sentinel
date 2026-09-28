@@ -1,0 +1,40 @@
+[
+  {
+    "name": "GCPBigQuery_CL",
+    "apiVersion": "2022-10-01",
+    "type": "Microsoft.OperationalInsights/workspaces/tables",
+    "location": "{{location}}",
+    "properties": {
+      "schema": {
+        "name": "GCPBigQuery_CL",
+        "columns": [
+          {
+            "name": "TimeGenerated",
+            "type": "datetime",
+            "description": "UTC commit timestamp of the source row from BigQuery APPENDS."
+          },
+          {
+            "name": "ProjectId",
+            "type": "string",
+            "description": "Google Cloud project containing the source BigQuery table."
+          },
+          {
+            "name": "DatasetId",
+            "type": "string",
+            "description": "Source BigQuery dataset ID."
+          },
+          {
+            "name": "TableId",
+            "type": "string",
+            "description": "Source BigQuery table ID."
+          },
+          {
+            "name": "Record",
+            "type": "dynamic",
+            "description": "Exported row as a JSON object, including APPENDS change metadata."
+          }
+        ]
+      }
+    }
+  }
+]
